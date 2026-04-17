@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Trash2 as TrashIcon } from "lucide-react";
+import { X, Trash2 as TrashIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import type { EventType, EquipmentLog } from "@/lib/types";
 
 interface LogDetailModalProps {
@@ -30,7 +30,7 @@ function formatDate(dateStr: string | null | undefined) {
 
 export default function LogDetailModal({ isOpen, onClose, logId, logs }: LogDetailModalProps) {
   const [actionLoading, setActionLoading] = useState(false);
-  const [viewPhotoId, setViewPhotoId] = useState<number | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [deletedPhotoIds, setDeletedPhotoIds] = useState<Set<number>>(new Set());
 
   if (!isOpen || logId === null) return null;
@@ -83,9 +83,21 @@ export default function LogDetailModal({ isOpen, onClose, logId, logs }: LogDeta
     try {
       await fetch(`/api/photos/${photoId}`, { method: "DELETE" });
       setDeletedPhotoIds((prev) => new Set(prev).add(photoId));
+      if (lightboxIndex !== null) setLightboxIndex(null);
     } catch (error) {
       console.error("Delete photo error:", error);
     }
+  }
+
+  function openLightbox(idx: number) { setLightboxIndex(idx); }
+  function closeLightbox() { setLightboxIndex(null); }
+  function prevPhoto() {
+    if (lightboxIndex === null) return;
+    setLightboxIndex(lightboxIndex > 0 ? lightboxIndex - 1 : visiblePhotos.length - 1);
+  }
+  function nextPhoto() {
+    if (lightboxIndex === null) return;
+    setLightboxIndex(lightboxIndex < visiblePhotos.length - 1 ? lightboxIndex + 1 : 0);
   }
 
   return (
@@ -142,19 +154,19 @@ export default function LogDetailModal({ isOpen, onClose, logId, logs }: LogDeta
             {visiblePhotos.length > 0 && (
               <div>
                 <p className="mb-1.5 text-[11px] font-semibold text-gray-500">첨부 사진 ({visiblePhotos.length})</p>
-                <div className="flex flex-wrap gap-2">
-                  {visiblePhotos.map((photo) => (
-                    <div key={photo.id} className="group relative h-20 w-20 rounded-lg overflow-hidden bg-gray-100">
+                <div className="grid grid-cols-4 gap-2">
+                  {visiblePhotos.map((photo, idx) => (
+                    <div key={photo.id} className="group relative aspect-square rounded-lg overflow-hidden bg-gray-100">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={`/api/photos/${photo.id}`}
                         alt={photo.fileName}
                         className="h-full w-full object-cover cursor-pointer"
-                        onClick={() => setViewPhotoId(photo.id)}
+                        onClick={() => openLightbox(idx)}
                       />
                       <button
-                        onClick={() => handleDeletePhoto(photo.id)}
-                        className="absolute right-0.5 top-0.5 hidden h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow group-hover:flex"
+                        onClick={(e) => { e.stopPropagation(); handleDeletePhoto(photo.id); }}
+                        className="absolute right-1 top-1 hidden h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow group-hover:flex"
                       >
                         <TrashIcon size={10} />
                       </button>
@@ -196,11 +208,41 @@ export default function LogDetailModal({ isOpen, onClose, logId, logs }: LogDeta
         </div>
       </div>
 
-      {viewPhotoId !== null && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80" onClick={() => setViewPhotoId(null)}>
-          <button onClick={() => setViewPhotoId(null)} className="absolute right-4 top-4 text-white hover:text-gray-300"><X size={24} /></button>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`/api/photos/${viewPhotoId}`} alt="사진 확대" className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain" />
+      {lightboxIndex !== null && visiblePhotos[lightboxIndex] && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90" onClick={closeLightbox}>
+          <button onClick={closeLightbox} className="absolute right-4 top-4 z-10 rounded-full bg-black/50 p-2 text-white hover:bg-black/70">
+            <X size={20} />
+          </button>
+
+          {visiblePhotos.length > 1 && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); prevPhoto(); }}
+                className="absolute left-3 z-10 rounded-full bg-black/50 p-2 text-white hover:bg-black/70"
+              >
+                <ChevronLeft size={24} />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); nextPhoto(); }}
+                className="absolute right-3 z-10 rounded-full bg-black/50 p-2 text-white hover:bg-black/70"
+              >
+                <ChevronRight size={24} />
+              </button>
+            </>
+          )}
+
+          <div onClick={(e) => e.stopPropagation()} className="relative max-h-[90vh] max-w-[90vw]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`/api/photos/${visiblePhotos[lightboxIndex].id}`}
+              alt={visiblePhotos[lightboxIndex].fileName}
+              className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
+            />
+            <div className="absolute bottom-0 inset-x-0 flex items-center justify-between rounded-b-lg bg-black/60 px-3 py-2">
+              <span className="text-[11px] text-white">{visiblePhotos[lightboxIndex].fileName}</span>
+              <span className="text-[11px] text-gray-300">{lightboxIndex + 1} / {visiblePhotos.length}</span>
+            </div>
+          </div>
         </div>
       )}
     </>

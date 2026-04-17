@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
       orderBy: { occurredAt: "desc" },
       include: {
         equipment: { select: { name: true } },
-        photos: { select: { id: true, fileName: true, fileSize: true } },
+        photos: { select: { id: true, fileName: true, fileSize: true }, orderBy: { createdAt: "asc" } },
       },
     });
 
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       },
       include: {
         equipment: { select: { name: true } },
-        photos: { select: { id: true, fileName: true, fileSize: true } },
+        photos: { select: { id: true, fileName: true, fileSize: true }, orderBy: { createdAt: "asc" } },
       },
     });
 
@@ -116,7 +116,7 @@ export async function PATCH(request: NextRequest) {
       data,
       include: {
         equipment: { select: { name: true } },
-        photos: { select: { id: true, fileName: true, fileSize: true } },
+        photos: { select: { id: true, fileName: true, fileSize: true }, orderBy: { createdAt: "asc" } },
       },
     });
 

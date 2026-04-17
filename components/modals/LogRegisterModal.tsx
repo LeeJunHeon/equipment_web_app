@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { X, Wrench, Wind, Trash2, Upload } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, Wrench, Wind, Trash2 } from "lucide-react";
 import type { EventType, Equipment, StatusType } from "@/lib/types";
+import PhotoUploader from "@/components/ui/PhotoUploader";
 
 interface LogRegisterModalProps {
   isOpen: boolean;
@@ -14,9 +15,7 @@ export default function LogRegisterModal({ isOpen, onClose, onSave }: LogRegiste
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [previews, setPreviews] = useState<string[]>([]);
 
   const [eventType, setEventType] = useState<EventType>("repair");
   const [equipmentId, setEquipmentId] = useState("");
@@ -38,7 +37,6 @@ export default function LogRegisterModal({ isOpen, onClose, onSave }: LogRegiste
     if (!isOpen) return;
     setError("");
     setSelectedFiles([]);
-    setPreviews([]);
     async function fetchEquipments() {
       try {
         const res = await fetch("/api/equipment");
@@ -51,12 +49,6 @@ export default function LogRegisterModal({ isOpen, onClose, onSave }: LogRegiste
     fetchEquipments();
   }, [isOpen]);
 
-  useEffect(() => {
-    const urls = selectedFiles.map((f) => URL.createObjectURL(f));
-    setPreviews(urls);
-    return () => urls.forEach((u) => URL.revokeObjectURL(u));
-  }, [selectedFiles]);
-
   if (!isOpen) return null;
 
   const filteredEquipments = eventType === "vent" ? equipments.filter((e) => e.isVentTarget) : equipments;
@@ -67,25 +59,9 @@ export default function LogRegisterModal({ isOpen, onClose, onSave }: LogRegiste
     { type: "cleaning", label: "클리닝🧹", icon: Trash2 },
   ];
 
-  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    if (!e.target.files) return;
-    setSelectedFiles((prev) => [...prev, ...Array.from(e.target.files!)]);
-    e.target.value = "";
-  }
-
-  function removeFile(index: number) {
-    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
-  }
-
   async function handleSave() {
-    if (!equipmentId) {
-      setError("장비를 선택해주세요.");
-      return;
-    }
-    if (!description.trim()) {
-      setError("내용을 입력해주세요.");
-      return;
-    }
+    if (!equipmentId) { setError("장비를 선택해주세요."); return; }
+    if (!description.trim()) { setError("내용을 입력해주세요."); return; }
 
     setSaving(true);
     setError("");
@@ -135,7 +111,10 @@ export default function LogRegisterModal({ isOpen, onClose, onSave }: LogRegiste
         const fd = new FormData();
         fd.append("file", file);
         fd.append("logId", String(logId));
-        await fetch("/api/upload", { method: "POST", body: fd });
+        const uploadRes = await fetch("/api/upload", { method: "POST", body: fd });
+        if (!uploadRes.ok) {
+          console.error("Upload failed for:", file.name);
+        }
       }
 
       onSave?.();
@@ -163,11 +142,7 @@ export default function LogRegisterModal({ isOpen, onClose, onSave }: LogRegiste
             <label className="mb-1.5 block text-[11px] font-semibold text-gray-500">유형 선택</label>
             <div className="flex gap-2">
               {typeButtons.map((btn) => (
-                <button
-                  key={btn.type}
-                  onClick={() => setEventType(btn.type)}
-                  className={`flex-1 rounded-lg border py-2 text-[12px] font-medium transition-colors ${eventType === btn.type ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}
-                >{btn.label}</button>
+                <button key={btn.type} onClick={() => setEventType(btn.type)} className={`flex-1 rounded-lg border py-2 text-[12px] font-medium transition-colors ${eventType === btn.type ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}>{btn.label}</button>
               ))}
             </div>
           </div>
@@ -183,9 +158,7 @@ export default function LogRegisterModal({ isOpen, onClose, onSave }: LogRegiste
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="mb-1.5 block text-[11px] font-semibold text-gray-500">담당자</label>
-              <select value={operator} onChange={(e) => setOperator(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400">
-                <option>이준헌</option><option>박민준</option>
-              </select>
+              <select value={operator} onChange={(e) => setOperator(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"><option>이준헌</option><option>박민준</option></select>
             </div>
             <div>
               <label className="mb-1.5 block text-[11px] font-semibold text-gray-500">발생 일시</label>
@@ -228,45 +201,15 @@ export default function LogRegisterModal({ isOpen, onClose, onSave }: LogRegiste
             </div>
           )}
 
-          <div>
-            <label className="mb-1.5 block text-[11px] font-semibold text-gray-500">사진 첨부</label>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/heic,image/webp"
-              multiple
-              className="hidden"
-              onChange={handleFileSelect}
-            />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="flex w-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-6 text-gray-400 hover:border-blue-300 hover:text-blue-500 transition-colors"
-            >
-              <Upload size={20} className="mb-1" />
-              <p className="text-[11px]">클릭하여 사진을 첨부하세요</p>
-            </button>
-            {previews.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-2">
-                {previews.map((url, i) => (
-                  <div key={i} className="relative h-16 w-16 rounded-lg overflow-hidden bg-gray-100">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={url} alt={`미리보기 ${i + 1}`} className="h-full w-full object-cover" />
-                    <button
-                      onClick={() => removeFile(i)}
-                      className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] text-white shadow"
-                    >
-                      <X size={10} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <PhotoUploader
+            onFilesChange={setSelectedFiles}
+            maxFiles={10}
+            disabled={saving}
+          />
         </div>
 
         <div className="flex justify-end gap-2 border-t border-gray-100 px-5 py-3">
-          <button onClick={onClose} className="rounded-lg border border-gray-200 px-4 py-2 text-[12px] font-medium text-gray-600 hover:bg-gray-50">취소</button>
+          <button onClick={onClose} disabled={saving} className="rounded-lg border border-gray-200 px-4 py-2 text-[12px] font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50">취소</button>
           <button onClick={handleSave} disabled={saving} className="rounded-lg bg-blue-600 px-4 py-2 text-[12px] font-medium text-white hover:bg-blue-700 disabled:opacity-50">
             {saving ? "저장 중..." : "저장"}
           </button>
