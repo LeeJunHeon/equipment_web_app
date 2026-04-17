@@ -193,12 +193,16 @@ export default function PhotoUploader({ onFilesChange, maxFiles = 10, disabled }
                 }`}
                 style={{ width: 72, height: 72 }}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={previews[i] || ""}
-                  alt={file.name}
-                  className="h-full w-full object-cover"
-                />
+                {previews[i] ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={previews[i]}
+                    alt={file.name}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="h-full w-full bg-gray-200 animate-pulse" />
+                )}
                 <button
                   type="button"
                   onClick={() => removeFile(i)}
