@@ -1,19 +1,20 @@
 "use client";
 
 import { Package, AlertTriangle, Wind, Sparkles } from "lucide-react";
-import { EQUIPMENTS, LOGS } from "@/lib/mockData";
-import type { PageId } from "@/lib/types";
+import { EQUIPMENTS } from "@/lib/mockData";
+import type { PageId, EquipmentLog } from "@/lib/types";
 
 interface DashboardPageProps {
   onNavigate: (page: PageId) => void;
   onRegisterClick: () => void;
   onDetailClick: (logId: number) => void;
+  logs: EquipmentLog[];
 }
 
-export default function DashboardPage({ onNavigate, onRegisterClick, onDetailClick }: DashboardPageProps) {
-  const unresolvedRepairs = LOGS.filter((l) => l.eventType === "repair" && l.status === "처리중");
-  const ventCount = LOGS.filter((l) => l.eventType === "vent").length;
-  const cleaningCount = LOGS.filter((l) => l.eventType === "cleaning").length;
+export default function DashboardPage({ onNavigate, onRegisterClick, onDetailClick, logs }: DashboardPageProps) {
+  const unresolvedRepairs = logs.filter((l) => l.eventType === "repair" && l.status === "처리중");
+  const ventCount = logs.filter((l) => l.eventType === "vent").length;
+  const cleaningCount = logs.filter((l) => l.eventType === "cleaning").length;
 
   const stats = [
     { label: "전체 장비", value: EQUIPMENTS.length, color: "bg-blue-50 text-blue-700", iconBg: "bg-blue-100", icon: <Package size={18} className="text-blue-600" /> },
@@ -23,13 +24,13 @@ export default function DashboardPage({ onNavigate, onRegisterClick, onDetailCli
   ];
 
   function getEquipmentStatus(eqId: number) {
-    const hasUnresolved = LOGS.some((l) => l.equipmentId === eqId && l.eventType === "repair" && l.status === "처리중");
+    const hasUnresolved = logs.some((l) => l.equipmentId === eqId && l.eventType === "repair" && l.status === "처리중");
     if (hasUnresolved) return { label: "수리미완료", cls: "bg-red-100 text-red-700" };
     return { label: "정상운영", cls: "bg-green-100 text-green-700" };
   }
 
   function getLastDate(eqId: number, type: string) {
-    const log = LOGS.filter((l) => l.equipmentId === eqId && l.eventType === type).sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))[0];
+    const log = logs.filter((l) => l.equipmentId === eqId && l.eventType === type).sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))[0];
     return log ? log.occurredAt.split(" ")[0] : "-";
   }
 

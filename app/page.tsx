@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import type { PageId } from "@/lib/types";
+import { useState, useEffect } from "react";
+import type { PageId, EquipmentLog } from "@/lib/types";
+import { LOGS } from "@/lib/mockData";
 import Sidebar from "@/components/Sidebar";
 import DashboardPage from "@/components/DashboardPage";
 import LogPage from "@/components/LogPage";
@@ -18,11 +19,20 @@ export default function Home() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showEquipmentModal, setShowEquipmentModal] = useState(false);
   const [selectedLogId, setSelectedLogId] = useState<number | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [logs, setLogs] = useState<EquipmentLog[]>(LOGS);
+
+  useEffect(() => {
+    if (window.innerWidth < 768) setSidebarOpen(false);
+  }, []);
 
   function handleDetailClick(logId: number) {
     setSelectedLogId(logId);
     setShowDetailModal(true);
+  }
+
+  function handleSave(newLog: Omit<EquipmentLog, "id">) {
+    setLogs((prev) => [...prev, { ...newLog, id: prev.length + 1 }]);
   }
 
   return (
@@ -33,6 +43,7 @@ export default function Home() {
         onEquipmentClick={() => setShowEquipmentModal(true)}
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
+        logs={logs}
       />
       <main className="flex-1 overflow-y-auto p-5 md:p-6">
         {currentPage === "dashboard" && (
@@ -40,36 +51,50 @@ export default function Home() {
             onNavigate={setCurrentPage}
             onRegisterClick={() => setShowRegisterModal(true)}
             onDetailClick={handleDetailClick}
+            logs={logs}
           />
         )}
         {currentPage === "log" && (
           <LogPage
             onDetailClick={handleDetailClick}
             onRegisterClick={() => setShowRegisterModal(true)}
+            logs={logs}
           />
         )}
         {currentPage === "repair" && (
           <RepairPage
             onDetailClick={handleDetailClick}
             onRegisterClick={() => setShowRegisterModal(true)}
+            logs={logs}
           />
         )}
         {currentPage === "vent" && (
           <VentPage
             onDetailClick={handleDetailClick}
             onRegisterClick={() => setShowRegisterModal(true)}
+            logs={logs}
           />
         )}
         {currentPage === "cleaning" && (
           <CleaningPage
             onDetailClick={handleDetailClick}
             onRegisterClick={() => setShowRegisterModal(true)}
+            logs={logs}
           />
         )}
       </main>
 
-      <LogRegisterModal isOpen={showRegisterModal} onClose={() => setShowRegisterModal(false)} />
-      <LogDetailModal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)} logId={selectedLogId} />
+      <LogRegisterModal
+        isOpen={showRegisterModal}
+        onClose={() => setShowRegisterModal(false)}
+        onSave={handleSave}
+      />
+      <LogDetailModal
+        isOpen={showDetailModal}
+        onClose={() => setShowDetailModal(false)}
+        logId={selectedLogId}
+        logs={logs}
+      />
       <EquipmentModal isOpen={showEquipmentModal} onClose={() => setShowEquipmentModal(false)} />
     </div>
   );

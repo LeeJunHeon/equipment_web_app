@@ -1,13 +1,13 @@
 "use client";
 
 import { X } from "lucide-react";
-import { LOGS } from "@/lib/mockData";
-import type { EventType } from "@/lib/types";
+import type { EventType, EquipmentLog } from "@/lib/types";
 
 interface LogDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   logId: number | null;
+  logs: EquipmentLog[];
 }
 
 const eventBadge: Record<EventType, { label: string; cls: string }> = {
@@ -16,14 +16,14 @@ const eventBadge: Record<EventType, { label: string; cls: string }> = {
   cleaning: { label: "클리닝", cls: "bg-[#d1fae5] text-[#047857]" },
 };
 
-export default function LogDetailModal({ isOpen, onClose, logId }: LogDetailModalProps) {
+export default function LogDetailModal({ isOpen, onClose, logId, logs }: LogDetailModalProps) {
   if (!isOpen || logId === null) return null;
 
-  const log = LOGS.find((l) => l.id === logId);
+  const log = logs.find((l) => l.id === logId);
   if (!log) return null;
 
   const badge = eventBadge[log.eventType];
-  const relatedLogs = LOGS.filter((l) => l.equipmentId === log.equipmentId)
+  const relatedLogs = logs.filter((l) => l.equipmentId === log.equipmentId)
     .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
     .slice(0, 5);
 

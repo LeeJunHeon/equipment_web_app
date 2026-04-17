@@ -3,14 +3,15 @@
 import { useState } from "react";
 import { X, Wrench, Wind, Trash2, Upload } from "lucide-react";
 import { EQUIPMENTS } from "@/lib/mockData";
-import type { EventType } from "@/lib/types";
+import type { EventType, EquipmentLog, StatusType } from "@/lib/types";
 
 interface LogRegisterModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSave?: (log: Omit<EquipmentLog, "id">) => void;
 }
 
-export default function LogRegisterModal({ isOpen, onClose }: LogRegisterModalProps) {
+export default function LogRegisterModal({ isOpen, onClose, onSave }: LogRegisterModalProps) {
   const [eventType, setEventType] = useState<EventType>("repair");
   const [equipmentId, setEquipmentId] = useState("");
   const [operator, setOperator] = useState("이준헌");
@@ -20,7 +21,7 @@ export default function LogRegisterModal({ isOpen, onClose }: LogRegisterModalPr
   const [replacedParts, setReplacedParts] = useState("");
   const [isExternal, setIsExternal] = useState("자체수리");
   const [vendorName, setVendorName] = useState("");
-  const [repairStatus, setRepairStatus] = useState("처리중");
+  const [repairStatus, setRepairStatus] = useState<StatusType>("처리중");
   const [ventReason, setVentReason] = useState("타겟 교체");
   const [finalPressure, setFinalPressure] = useState("");
   const [pumpedDownAt, setPumpedDownAt] = useState("");
@@ -36,6 +37,47 @@ export default function LogRegisterModal({ isOpen, onClose }: LogRegisterModalPr
     { type: "vent", label: "Vent💨", icon: Wind },
     { type: "cleaning", label: "클리닝🧹", icon: Trash2 },
   ];
+
+  function handleSave() {
+    if (!equipmentId) {
+      alert("장비를 선택해주세요.");
+      return;
+    }
+    if (!description.trim()) {
+      alert("내용을 입력해주세요.");
+      return;
+    }
+
+    const selectedEquipment = EQUIPMENTS.find((e) => e.id === Number(equipmentId));
+    const newLog: Omit<EquipmentLog, "id"> = {
+      equipmentId: Number(equipmentId),
+      equipmentName: selectedEquipment?.name || "",
+      eventType,
+      occurredAt: occurredAt ? occurredAt.replace("T", " ") : new Date().toISOString().slice(0, 16).replace("T", " "),
+      operator,
+      description,
+      photoCount: 0,
+      status: eventType === "repair" ? repairStatus : "완료",
+      ...(eventType === "repair" && {
+        symptom,
+        replacedParts,
+        isExternal: isExternal === "외부업체",
+        vendorName: isExternal === "외부업체" ? vendorName : undefined,
+      }),
+      ...(eventType === "vent" && {
+        ventReason,
+        finalPressure,
+        pumpedDownAt: pumpedDownAt ? pumpedDownAt.replace("T", " ") : undefined,
+      }),
+      ...(eventType === "cleaning" && {
+        cleaningType,
+        nextScheduledAt,
+      }),
+    };
+
+    onSave?.(newLog);
+    onClose();
+  }
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40" onClick={onClose}>
@@ -167,7 +209,7 @@ export default function LogRegisterModal({ isOpen, onClose }: LogRegisterModalPr
                 <label className="mb-1 block text-[11px] text-gray-500">완료 여부</label>
                 <select
                   value={repairStatus}
-                  onChange={(e) => setRepairStatus(e.target.value)}
+                  onChange={(e) => setRepairStatus(e.target.value as StatusType)}
                   className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"
                 >
                   <option>처리중</option>
@@ -261,7 +303,7 @@ export default function LogRegisterModal({ isOpen, onClose }: LogRegisterModalPr
             취소
           </button>
           <button
-            onClick={onClose}
+            onClick={handleSave}
             className="rounded-lg bg-blue-600 px-4 py-2 text-[12px] font-medium text-white hover:bg-blue-700"
           >
             저장

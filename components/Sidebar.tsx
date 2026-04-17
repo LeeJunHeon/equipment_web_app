@@ -1,7 +1,7 @@
 "use client";
 
 import { LayoutDashboard, ClipboardList, Wrench, Wind, Trash2, Monitor, X, Menu } from "lucide-react";
-import type { PageId } from "@/lib/types";
+import type { PageId, EquipmentLog } from "@/lib/types";
 
 interface SidebarProps {
   currentPage: PageId;
@@ -9,29 +9,32 @@ interface SidebarProps {
   onEquipmentClick: () => void;
   isOpen: boolean;
   onToggle: () => void;
+  logs: EquipmentLog[];
 }
 
-const unresolvedRepairCount = 3;
+export default function Sidebar({ currentPage, onNavigate, onEquipmentClick, isOpen, onToggle, logs }: SidebarProps) {
+  const unresolvedRepairCount = logs.filter(
+    (l) => l.eventType === "repair" && l.status === "처리중"
+  ).length;
 
-const navSections = [
-  {
-    label: "메인",
-    items: [
-      { id: "dashboard" as PageId, label: "대시보드", icon: LayoutDashboard },
-      { id: "log" as PageId, label: "전체 이력", icon: ClipboardList, badge: unresolvedRepairCount },
-    ],
-  },
-  {
-    label: "이력",
-    items: [
-      { id: "repair" as PageId, label: "수리", icon: Wrench, badge: unresolvedRepairCount },
-      { id: "vent" as PageId, label: "Vent", icon: Wind },
-      { id: "cleaning" as PageId, label: "클리닝", icon: Trash2 },
-    ],
-  },
-];
+  const navSections = [
+    {
+      label: "메인",
+      items: [
+        { id: "dashboard" as PageId, label: "대시보드", icon: LayoutDashboard },
+        { id: "log" as PageId, label: "전체 이력", icon: ClipboardList, badge: unresolvedRepairCount },
+      ],
+    },
+    {
+      label: "이력",
+      items: [
+        { id: "repair" as PageId, label: "수리", icon: Wrench, badge: unresolvedRepairCount },
+        { id: "vent" as PageId, label: "Vent", icon: Wind },
+        { id: "cleaning" as PageId, label: "클리닝", icon: Trash2 },
+      ],
+    },
+  ];
 
-export default function Sidebar({ currentPage, onNavigate, onEquipmentClick, isOpen, onToggle }: SidebarProps) {
   return (
     <>
       <button
@@ -74,7 +77,7 @@ export default function Sidebar({ currentPage, onNavigate, onEquipmentClick, isO
                     key={item.id}
                     onClick={() => {
                       onNavigate(item.id);
-                      onToggle();
+                      if (window.innerWidth < 768) onToggle();
                     }}
                     className={`flex w-full items-center gap-2 rounded-lg px-3 py-[7px] text-[12.5px] transition-colors ${
                       active
@@ -84,11 +87,11 @@ export default function Sidebar({ currentPage, onNavigate, onEquipmentClick, isO
                   >
                     <Icon size={15} className={active ? "text-blue-600" : "text-gray-400"} />
                     <span className="flex-1 text-left">{item.label}</span>
-                    {item.badge && (
+                    {item.badge ? (
                       <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
                         {item.badge}
                       </span>
-                    )}
+                    ) : null}
                   </button>
                 );
               })}
@@ -102,7 +105,7 @@ export default function Sidebar({ currentPage, onNavigate, onEquipmentClick, isO
             <button
               onClick={() => {
                 onEquipmentClick();
-                onToggle();
+                if (window.innerWidth < 768) onToggle();
               }}
               className="flex w-full items-center gap-2 rounded-lg px-3 py-[7px] text-[12.5px] text-gray-600 transition-colors hover:bg-gray-50"
             >

@@ -2,13 +2,14 @@
 
 import { useState, useMemo } from "react";
 import { Search, Camera } from "lucide-react";
-import { LOGS, EQUIPMENTS } from "@/lib/mockData";
-import type { EventType } from "@/lib/types";
+import { EQUIPMENTS } from "@/lib/mockData";
+import type { EventType, EquipmentLog } from "@/lib/types";
 
 interface LogPageProps {
   onDetailClick: (logId: number) => void;
   onRegisterClick: () => void;
   filterType?: EventType | null;
+  logs: EquipmentLog[];
 }
 
 const eventBadge: Record<EventType, { label: string; cls: string }> = {
@@ -23,13 +24,13 @@ const pageTitle: Record<string, string> = {
   cleaning: "클리닝 이력",
 };
 
-export default function LogPage({ onDetailClick, onRegisterClick, filterType }: LogPageProps) {
+export default function LogPage({ onDetailClick, onRegisterClick, filterType, logs }: LogPageProps) {
   const [search, setSearch] = useState("");
   const [equipFilter, setEquipFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
   const filtered = useMemo(() => {
-    return LOGS.filter((log) => {
+    return logs.filter((log) => {
       if (filterType && log.eventType !== filterType) return false;
       if (equipFilter && log.equipmentId !== Number(equipFilter)) return false;
       if (statusFilter && log.status !== statusFilter) return false;
@@ -43,7 +44,7 @@ export default function LogPage({ onDetailClick, onRegisterClick, filterType }: 
       }
       return true;
     });
-  }, [search, equipFilter, statusFilter, filterType]);
+  }, [logs, search, equipFilter, statusFilter, filterType]);
 
   const title = filterType ? pageTitle[filterType] : "전체 이력";
 
