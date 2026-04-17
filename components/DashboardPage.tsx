@@ -1,26 +1,54 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Package, AlertTriangle, Wind, Sparkles } from "lucide-react";
-import { EQUIPMENTS } from "@/lib/mockData";
-import type { PageId, EquipmentLog } from "@/lib/types";
+import type { PageId, Equipment, EquipmentLog } from "@/lib/types";
 
 interface DashboardPageProps {
   onNavigate: (page: PageId) => void;
   onRegisterClick: () => void;
   onDetailClick: (logId: number) => void;
-  logs: EquipmentLog[];
+  refreshKey: number;
 }
 
-export default function DashboardPage({ onNavigate, onRegisterClick, onDetailClick, logs }: DashboardPageProps) {
+export default function DashboardPage({ onNavigate, onRegisterClick, onDetailClick, refreshKey }: DashboardPageProps) {
+  const [equipments, setEquipments] = useState<Equipment[]>([]);
+  const [logs, setLogs] = useState<EquipmentLog[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      setLoading(true);
+      try {
+        const [eqRes, logRes] = await Promise.all([
+          fetch("/api/equipment"),
+          fetch("/api/logs"),
+        ]);
+        if (eqRes.ok) setEquipments(await eqRes.json());
+        if (logRes.ok) setLogs(await logRes.json());
+      } catch (error) {
+        console.error("Dashboard fetch error:", error);
+        setEquipments([]);
+        setLogs([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, [refreshKey]);
+
   const unresolvedRepairs = logs.filter((l) => l.eventType === "repair" && l.status === "처리중");
-  const ventCount = logs.filter((l) => l.eventType === "vent").length;
-  const cleaningCount = logs.filter((l) => l.eventType === "cleaning").length;
+
+  const now = new Date();
+  const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const ventCount = logs.filter((l) => l.eventType === "vent" && l.occurredAt.startsWith(thisMonth)).length;
+  const cleaningCount = logs.filter((l) => l.eventType === "cleaning" && l.occurredAt.startsWith(thisMonth)).length;
 
   const stats = [
-    { label: "전체 장비", value: EQUIPMENTS.length, color: "bg-blue-50 text-blue-700", iconBg: "bg-blue-100", icon: <Package size={18} className="text-blue-600" /> },
-    { label: "미해결 수리", value: unresolvedRepairs.length, color: "bg-red-50 text-red-700", iconBg: "bg-red-100", icon: <AlertTriangle size={18} className="text-red-600" />, onClick: () => onNavigate("repair") },
-    { label: "이번 달 Vent", value: ventCount, color: "bg-yellow-50 text-yellow-700", iconBg: "bg-yellow-100", icon: <Wind size={18} className="text-yellow-600" /> },
-    { label: "이번 달 클리닝", value: cleaningCount, color: "bg-green-50 text-green-700", iconBg: "bg-green-100", icon: <Sparkles size={18} className="text-green-600" /> },
+    { label: "전체 장비", value: equipments.length, iconBg: "bg-blue-100", icon: <Package size={18} className="text-blue-600" /> },
+    { label: "미해결 수리", value: unresolvedRepairs.length, iconBg: "bg-red-100", icon: <AlertTriangle size={18} className="text-red-600" />, onClick: () => onNavigate("repair") },
+    { label: "이번 달 Vent", value: ventCount, iconBg: "bg-yellow-100", icon: <Wind size={18} className="text-yellow-600" /> },
+    { label: "이번 달 클리닝", value: cleaningCount, iconBg: "bg-green-100", icon: <Sparkles size={18} className="text-green-600" /> },
   ];
 
   function getEquipmentStatus(eqId: number) {
@@ -31,13 +59,22 @@ export default function DashboardPage({ onNavigate, onRegisterClick, onDetailCli
 
   function getLastDate(eqId: number, type: string) {
     const log = logs.filter((l) => l.equipmentId === eqId && l.eventType === type).sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))[0];
-    return log ? log.occurredAt.split(" ")[0] : "-";
+    return log ? log.occurredAt.split("T")[0] : "-";
   }
 
   function daysSince(dateStr: string) {
-    const d = new Date(dateStr.replace(" ", "T"));
-    const now = new Date("2026-04-17");
-    return Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+    const d = new Date(dateStr);
+    const diff = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+    return diff;
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-5">
+        <h1 className="text-[18px] font-bold text-gray-900">대시보드</h1>
+        <p className="text-[13px] text-gray-400">로딩 중...</p>
+      </div>
+    );
   }
 
   return (
@@ -71,7 +108,7 @@ export default function DashboardPage({ onNavigate, onRegisterClick, onDetailCli
       <div>
         <h2 className="mb-3 text-[14px] font-bold text-gray-900">장비 현황</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {EQUIPMENTS.map((eq) => {
+          {equipments.map((eq) => {
             const status = getEquipmentStatus(eq.id);
             const hasUnresolved = status.label === "수리미완료";
             return (
@@ -118,12 +155,15 @@ export default function DashboardPage({ onNavigate, onRegisterClick, onDetailCli
               </tr>
             </thead>
             <tbody>
+              {unresolvedRepairs.length === 0 && (
+                <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400">미해결 수리 건이 없습니다.</td></tr>
+              )}
               {unresolvedRepairs.map((log) => (
                 <tr key={log.id} className="border-b border-gray-50 hover:bg-gray-50">
                   <td className="px-4 py-2.5 font-medium text-gray-900">{log.equipmentName}</td>
                   <td className="px-4 py-2.5 text-gray-600">{log.symptom || "-"}</td>
                   <td className="px-4 py-2.5 text-gray-600">{log.operator}</td>
-                  <td className="px-4 py-2.5 text-gray-600">{log.occurredAt.split(" ")[0]}</td>
+                  <td className="px-4 py-2.5 text-gray-600">{log.occurredAt.split("T")[0]}</td>
                   <td className="px-4 py-2.5">
                     <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-600">
                       {daysSince(log.occurredAt)}일

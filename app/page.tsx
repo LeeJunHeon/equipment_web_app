@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { PageId, EquipmentLog } from "@/lib/types";
-import { LOGS } from "@/lib/mockData";
 import Sidebar from "@/components/Sidebar";
 import DashboardPage from "@/components/DashboardPage";
 import LogPage from "@/components/LogPage";
@@ -20,19 +19,37 @@ export default function Home() {
   const [showEquipmentModal, setShowEquipmentModal] = useState(false);
   const [selectedLogId, setSelectedLogId] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [logs, setLogs] = useState<EquipmentLog[]>(LOGS);
+  const [logs, setLogs] = useState<EquipmentLog[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (window.innerWidth < 768) setSidebarOpen(false);
   }, []);
+
+  const fetchLogs = useCallback(async () => {
+    try {
+      const res = await fetch("/api/logs");
+      if (res.ok) {
+        const data = await res.json();
+        setLogs(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch logs:", error);
+      setLogs([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchLogs();
+  }, [fetchLogs, refreshKey]);
 
   function handleDetailClick(logId: number) {
     setSelectedLogId(logId);
     setShowDetailModal(true);
   }
 
-  function handleSave(newLog: Omit<EquipmentLog, "id">) {
-    setLogs((prev) => [...prev, { ...newLog, id: prev.length + 1 }]);
+  function handleRefresh() {
+    setRefreshKey((k) => k + 1);
   }
 
   return (
@@ -51,35 +68,35 @@ export default function Home() {
             onNavigate={setCurrentPage}
             onRegisterClick={() => setShowRegisterModal(true)}
             onDetailClick={handleDetailClick}
-            logs={logs}
+            refreshKey={refreshKey}
           />
         )}
         {currentPage === "log" && (
           <LogPage
             onDetailClick={handleDetailClick}
             onRegisterClick={() => setShowRegisterModal(true)}
-            logs={logs}
+            refreshKey={refreshKey}
           />
         )}
         {currentPage === "repair" && (
           <RepairPage
             onDetailClick={handleDetailClick}
             onRegisterClick={() => setShowRegisterModal(true)}
-            logs={logs}
+            refreshKey={refreshKey}
           />
         )}
         {currentPage === "vent" && (
           <VentPage
             onDetailClick={handleDetailClick}
             onRegisterClick={() => setShowRegisterModal(true)}
-            logs={logs}
+            refreshKey={refreshKey}
           />
         )}
         {currentPage === "cleaning" && (
           <CleaningPage
             onDetailClick={handleDetailClick}
             onRegisterClick={() => setShowRegisterModal(true)}
-            logs={logs}
+            refreshKey={refreshKey}
           />
         )}
       </main>
@@ -87,15 +104,24 @@ export default function Home() {
       <LogRegisterModal
         isOpen={showRegisterModal}
         onClose={() => setShowRegisterModal(false)}
-        onSave={handleSave}
+        onSave={handleRefresh}
       />
       <LogDetailModal
         isOpen={showDetailModal}
-        onClose={() => setShowDetailModal(false)}
+        onClose={() => {
+          setShowDetailModal(false);
+          handleRefresh();
+        }}
         logId={selectedLogId}
         logs={logs}
       />
-      <EquipmentModal isOpen={showEquipmentModal} onClose={() => setShowEquipmentModal(false)} />
+      <EquipmentModal
+        isOpen={showEquipmentModal}
+        onClose={() => {
+          setShowEquipmentModal(false);
+          handleRefresh();
+        }}
+      />
     </div>
   );
 }

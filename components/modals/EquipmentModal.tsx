@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Plus, Pencil, Trash2 } from "lucide-react";
-import { EQUIPMENTS } from "@/lib/mockData";
 import type { Equipment } from "@/lib/types";
 
 interface EquipmentModalProps {
@@ -11,19 +10,38 @@ interface EquipmentModalProps {
 }
 
 export default function EquipmentModal({ isOpen, onClose }: EquipmentModalProps) {
-  const [equipments, setEquipments] = useState<Equipment[]>([...EQUIPMENTS]);
+  const [equipments, setEquipments] = useState<Equipment[]>([]);
+  const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [formName, setFormName] = useState("");
   const [formCategory, setFormCategory] = useState("");
   const [formIsVent, setFormIsVent] = useState(false);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    fetchEquipments();
+  }, [isOpen]);
+
+  async function fetchEquipments() {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/equipment");
+      if (res.ok) setEquipments(await res.json());
+    } catch (error) {
+      console.error("Failed to fetch equipments:", error);
+      setEquipments([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   if (!isOpen) return null;
 
   function startEdit(eq: Equipment) {
     setEditingId(eq.id);
     setFormName(eq.name);
-    setFormCategory(eq.category);
+    setFormCategory(eq.category || "");
     setFormIsVent(eq.isVentTarget);
     setIsAdding(false);
   }
@@ -36,17 +54,6 @@ export default function EquipmentModal({ isOpen, onClose }: EquipmentModalProps)
     setFormIsVent(false);
   }
 
-  function saveEdit() {
-    if (!formName.trim()) return;
-    if (isAdding) {
-      const newId = Math.max(...equipments.map((e) => e.id), 0) + 1;
-      setEquipments([...equipments, { id: newId, name: formName, category: formCategory, isVentTarget: formIsVent }]);
-    } else if (editingId !== null) {
-      setEquipments(equipments.map((e) => e.id === editingId ? { ...e, name: formName, category: formCategory, isVentTarget: formIsVent } : e));
-    }
-    cancelEdit();
-  }
-
   function cancelEdit() {
     setEditingId(null);
     setIsAdding(false);
@@ -55,8 +62,44 @@ export default function EquipmentModal({ isOpen, onClose }: EquipmentModalProps)
     setFormIsVent(false);
   }
 
-  function deleteEquipment(id: number) {
-    setEquipments(equipments.filter((e) => e.id !== id));
+  async function saveEdit() {
+    if (!formName.trim()) return;
+
+    try {
+      if (isAdding) {
+        const res = await fetch("/api/equipment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: formName, category: formCategory, isVentTarget: formIsVent }),
+        });
+        if (!res.ok) return;
+      } else if (editingId !== null) {
+        const res = await fetch("/api/equipment", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: editingId, name: formName, category: formCategory, isVentTarget: formIsVent }),
+        });
+        if (!res.ok) return;
+      }
+      cancelEdit();
+      await fetchEquipments();
+    } catch (error) {
+      console.error("Save equipment error:", error);
+    }
+  }
+
+  async function deleteEquipment(id: number) {
+    if (!confirm("정말 비활성화하시겠습니까?")) return;
+    try {
+      await fetch("/api/equipment", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      await fetchEquipments();
+    } catch (error) {
+      console.error("Delete equipment error:", error);
+    }
   }
 
   return (
@@ -82,27 +125,10 @@ export default function EquipmentModal({ isOpen, onClose }: EquipmentModalProps)
 
           {isAdding && (
             <div className="mb-3 space-y-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
-              <input
-                type="text"
-                placeholder="장비명"
-                value={formName}
-                onChange={(e) => setFormName(e.target.value)}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"
-              />
-              <input
-                type="text"
-                placeholder="카테고리"
-                value={formCategory}
-                onChange={(e) => setFormCategory(e.target.value)}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"
-              />
+              <input type="text" placeholder="장비명" value={formName} onChange={(e) => setFormName(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400" />
+              <input type="text" placeholder="카테고리" value={formCategory} onChange={(e) => setFormCategory(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400" />
               <label className="flex items-center gap-2 text-[12px] text-gray-600">
-                <input
-                  type="checkbox"
-                  checked={formIsVent}
-                  onChange={(e) => setFormIsVent(e.target.checked)}
-                  className="rounded"
-                />
+                <input type="checkbox" checked={formIsVent} onChange={(e) => setFormIsVent(e.target.checked)} className="rounded" />
                 Vent 기록 대상
               </label>
               <div className="flex justify-end gap-2">
@@ -112,30 +138,17 @@ export default function EquipmentModal({ isOpen, onClose }: EquipmentModalProps)
             </div>
           )}
 
+          {loading && <p className="text-center text-[12px] text-gray-400 py-4">로딩 중...</p>}
+
           <div className="space-y-1">
             {equipments.map((eq) => (
               <div key={eq.id}>
                 {editingId === eq.id ? (
                   <div className="space-y-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
-                    <input
-                      type="text"
-                      value={formName}
-                      onChange={(e) => setFormName(e.target.value)}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"
-                    />
-                    <input
-                      type="text"
-                      value={formCategory}
-                      onChange={(e) => setFormCategory(e.target.value)}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"
-                    />
+                    <input type="text" value={formName} onChange={(e) => setFormName(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400" />
+                    <input type="text" value={formCategory} onChange={(e) => setFormCategory(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400" />
                     <label className="flex items-center gap-2 text-[12px] text-gray-600">
-                      <input
-                        type="checkbox"
-                        checked={formIsVent}
-                        onChange={(e) => setFormIsVent(e.target.checked)}
-                        className="rounded"
-                      />
+                      <input type="checkbox" checked={formIsVent} onChange={(e) => setFormIsVent(e.target.checked)} className="rounded" />
                       Vent 기록 대상
                     </label>
                     <div className="flex justify-end gap-2">
@@ -170,10 +183,7 @@ export default function EquipmentModal({ isOpen, onClose }: EquipmentModalProps)
         </div>
 
         <div className="flex justify-end border-t border-gray-100 px-5 py-3">
-          <button
-            onClick={onClose}
-            className="rounded-lg border border-gray-200 px-4 py-2 text-[12px] font-medium text-gray-600 hover:bg-gray-50"
-          >
+          <button onClick={onClose} className="rounded-lg border border-gray-200 px-4 py-2 text-[12px] font-medium text-gray-600 hover:bg-gray-50">
             닫기
           </button>
         </div>

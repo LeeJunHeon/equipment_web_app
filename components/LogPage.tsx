@@ -1,15 +1,14 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Search, Camera } from "lucide-react";
-import { EQUIPMENTS } from "@/lib/mockData";
-import type { EventType, EquipmentLog } from "@/lib/types";
+import type { EventType, Equipment, EquipmentLog } from "@/lib/types";
 
 interface LogPageProps {
   onDetailClick: (logId: number) => void;
   onRegisterClick: () => void;
   filterType?: EventType | null;
-  logs: EquipmentLog[];
+  refreshKey: number;
 }
 
 const eventBadge: Record<EventType, { label: string; cls: string }> = {
@@ -24,27 +23,70 @@ const pageTitle: Record<string, string> = {
   cleaning: "클리닝 이력",
 };
 
-export default function LogPage({ onDetailClick, onRegisterClick, filterType, logs }: LogPageProps) {
+function formatDate(dateStr: string) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
+}
+
+export default function LogPage({ onDetailClick, onRegisterClick, filterType, refreshKey }: LogPageProps) {
+  const [logs, setLogs] = useState<EquipmentLog[]>([]);
+  const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [search, setSearch] = useState("");
   const [equipFilter, setEquipFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  const filtered = useMemo(() => {
-    return logs.filter((log) => {
-      if (filterType && log.eventType !== filterType) return false;
-      if (equipFilter && log.equipmentId !== Number(equipFilter)) return false;
-      if (statusFilter && log.status !== statusFilter) return false;
-      if (search) {
+  const fetchLogs = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (filterType) params.set("eventType", filterType);
+      if (equipFilter) params.set("equipmentId", equipFilter);
+      if (statusFilter) params.set("status", statusFilter);
+
+      const res = await fetch(`/api/logs?${params.toString()}`);
+      if (res.ok) setLogs(await res.json());
+    } catch (error) {
+      console.error("Failed to fetch logs:", error);
+      setLogs([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [filterType, equipFilter, statusFilter, refreshKey]);
+
+  useEffect(() => {
+    fetchLogs();
+  }, [fetchLogs]);
+
+  useEffect(() => {
+    async function fetchEquipments() {
+      try {
+        const res = await fetch("/api/equipment");
+        if (res.ok) setEquipments(await res.json());
+      } catch (error) {
+        console.error("Failed to fetch equipments:", error);
+        setEquipments([]);
+      }
+    }
+    fetchEquipments();
+  }, []);
+
+  const filtered = search
+    ? logs.filter((log) => {
         const q = search.toLowerCase();
         return (
           log.equipmentName.toLowerCase().includes(q) ||
           log.operator.toLowerCase().includes(q) ||
-          log.description.toLowerCase().includes(q)
+          (log.description || "").toLowerCase().includes(q)
         );
-      }
-      return true;
-    });
-  }, [logs, search, equipFilter, statusFilter, filterType]);
+      })
+    : logs;
 
   const title = filterType ? pageTitle[filterType] : "전체 이력";
 
@@ -77,7 +119,7 @@ export default function LogPage({ onDetailClick, onRegisterClick, filterType, lo
           className="rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"
         >
           <option value="">전체 장비</option>
-          {EQUIPMENTS.map((eq) => (
+          {equipments.map((eq) => (
             <option key={eq.id} value={eq.id}>{eq.name}</option>
           ))}
         </select>
@@ -107,14 +149,13 @@ export default function LogPage({ onDetailClick, onRegisterClick, filterType, lo
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 && (
-              <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-gray-400">
-                  해당하는 이력이 없습니다.
-                </td>
-              </tr>
+            {loading && (
+              <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">로딩 중...</td></tr>
             )}
-            {filtered.map((log) => {
+            {!loading && filtered.length === 0 && (
+              <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">해당하는 이력이 없습니다.</td></tr>
+            )}
+            {!loading && filtered.map((log) => {
               const badge = eventBadge[log.eventType];
               return (
                 <tr key={log.id} className="border-b border-gray-50 hover:bg-gray-50">
@@ -130,11 +171,11 @@ export default function LogPage({ onDetailClick, onRegisterClick, filterType, lo
                     <p className="line-clamp-2">{log.description}</p>
                   </td>
                   <td className="px-4 py-2.5 text-gray-600">{log.operator}</td>
-                  <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{log.occurredAt}</td>
+                  <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{formatDate(log.occurredAt)}</td>
                   <td className="px-4 py-2.5">
-                    {log.photoCount > 0 && (
+                    {log.photoUrls && log.photoUrls.length > 0 && (
                       <span className="inline-flex items-center gap-0.5 text-gray-400">
-                        <Camera size={12} /> {log.photoCount}
+                        <Camera size={12} /> {log.photoUrls.length}
                       </span>
                     )}
                   </td>

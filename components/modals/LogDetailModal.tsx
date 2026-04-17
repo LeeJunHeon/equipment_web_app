@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { X } from "lucide-react";
 import type { EventType, EquipmentLog } from "@/lib/types";
 
@@ -16,7 +17,20 @@ const eventBadge: Record<EventType, { label: string; cls: string }> = {
   cleaning: { label: "클리닝", cls: "bg-[#d1fae5] text-[#047857]" },
 };
 
+function formatDate(dateStr: string | null | undefined) {
+  if (!dateStr) return "-";
+  const d = new Date(dateStr);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
+}
+
 export default function LogDetailModal({ isOpen, onClose, logId, logs }: LogDetailModalProps) {
+  const [actionLoading, setActionLoading] = useState(false);
+
   if (!isOpen || logId === null) return null;
 
   const log = logs.find((l) => l.id === logId);
@@ -26,6 +40,39 @@ export default function LogDetailModal({ isOpen, onClose, logId, logs }: LogDeta
   const relatedLogs = logs.filter((l) => l.equipmentId === log.equipmentId)
     .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
     .slice(0, 5);
+
+  async function handleComplete() {
+    setActionLoading(true);
+    try {
+      await fetch("/api/logs", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: log!.id, status: "완료" }),
+      });
+      onClose();
+    } catch (error) {
+      console.error("Complete error:", error);
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!confirm("정말 삭제하시겠습니까?")) return;
+    setActionLoading(true);
+    try {
+      await fetch("/api/logs", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: log!.id }),
+      });
+      onClose();
+    } catch (error) {
+      console.error("Delete error:", error);
+    } finally {
+      setActionLoading(false);
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40" onClick={onClose}>
@@ -51,7 +98,7 @@ export default function LogDetailModal({ isOpen, onClose, logId, logs }: LogDeta
             <p className="text-[14px] font-bold text-gray-900">
               {log.equipmentName} {log.symptom ? `— ${log.symptom}` : ""}
             </p>
-            <p className="text-[11px] text-gray-500">{log.operator} · {log.occurredAt}</p>
+            <p className="text-[11px] text-gray-500">{log.operator} · {formatDate(log.occurredAt)}</p>
           </div>
 
           <div className="rounded-lg border border-gray-100 text-[12px]">
@@ -65,7 +112,7 @@ export default function LogDetailModal({ isOpen, onClose, logId, logs }: LogDeta
             </div>
             <div className="grid grid-cols-[100px_1fr] border-b border-gray-50">
               <span className="bg-gray-50 px-3 py-2 font-medium text-gray-500">발생 일시</span>
-              <span className="px-3 py-2 text-gray-800">{log.occurredAt}</span>
+              <span className="px-3 py-2 text-gray-800">{formatDate(log.occurredAt)}</span>
             </div>
 
             {log.eventType === "repair" && (
@@ -99,7 +146,7 @@ export default function LogDetailModal({ isOpen, onClose, logId, logs }: LogDeta
                 </div>
                 <div className="grid grid-cols-[100px_1fr] border-b border-gray-50">
                   <span className="bg-gray-50 px-3 py-2 font-medium text-gray-500">Pump-down</span>
-                  <span className="px-3 py-2 text-gray-800">{log.pumpedDownAt || "-"}</span>
+                  <span className="px-3 py-2 text-gray-800">{formatDate(log.pumpedDownAt)}</span>
                 </div>
               </>
             )}
@@ -112,7 +159,7 @@ export default function LogDetailModal({ isOpen, onClose, logId, logs }: LogDeta
                 </div>
                 <div className="grid grid-cols-[100px_1fr] border-b border-gray-50">
                   <span className="bg-gray-50 px-3 py-2 font-medium text-gray-500">다음 예정</span>
-                  <span className="px-3 py-2 text-gray-800">{log.nextScheduledAt || "-"}</span>
+                  <span className="px-3 py-2 text-gray-800">{log.nextScheduledAt ? new Date(log.nextScheduledAt).toLocaleDateString("ko-KR") : "-"}</span>
                 </div>
               </>
             )}
@@ -121,17 +168,18 @@ export default function LogDetailModal({ isOpen, onClose, logId, logs }: LogDeta
           <div>
             <p className="mb-1.5 text-[11px] font-semibold text-gray-500">상세 내용</p>
             <div className="rounded-lg bg-gray-50 px-3 py-2.5 text-[12px] leading-relaxed text-gray-700">
-              {log.description}
+              {log.description || "-"}
             </div>
           </div>
 
-          {log.photoCount > 0 && (
+          {log.photoUrls && log.photoUrls.length > 0 && (
             <div>
-              <p className="mb-1.5 text-[11px] font-semibold text-gray-500">첨부 사진 ({log.photoCount})</p>
+              <p className="mb-1.5 text-[11px] font-semibold text-gray-500">첨부 사진 ({log.photoUrls.length})</p>
               <div className="flex gap-2">
-                {Array.from({ length: log.photoCount }).map((_, i) => (
-                  <div key={i} className="flex h-20 w-20 items-center justify-center rounded-lg bg-gray-100 text-[10px] text-gray-400">
-                    사진 {i + 1}
+                {log.photoUrls.map((url, i) => (
+                  <div key={i} className="flex h-20 w-20 items-center justify-center rounded-lg bg-gray-100 text-[10px] text-gray-400 overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt={`사진 ${i + 1}`} className="h-full w-full object-cover" />
                   </div>
                 ))}
               </div>
@@ -151,7 +199,7 @@ export default function LogDetailModal({ isOpen, onClose, logId, logs }: LogDeta
                         <span className={`rounded px-1.5 py-0.5 text-[9px] font-medium ${rlBadge.cls}`}>{rlBadge.label}</span>
                         <span className="text-[11px] text-gray-700 line-clamp-1">{rl.description}</span>
                       </div>
-                      <p className="text-[10px] text-gray-400">{rl.occurredAt} · {rl.operator}</p>
+                      <p className="text-[10px] text-gray-400">{formatDate(rl.occurredAt)} · {rl.operator}</p>
                     </div>
                   </div>
                 );
@@ -161,18 +209,25 @@ export default function LogDetailModal({ isOpen, onClose, logId, logs }: LogDeta
         </div>
 
         <div className="flex justify-end gap-2 border-t border-gray-100 px-5 py-3">
-          <button
-            onClick={onClose}
-            className="rounded-lg border border-gray-200 px-4 py-2 text-[12px] font-medium text-gray-600 hover:bg-gray-50"
-          >
+          <button onClick={onClose} className="rounded-lg border border-gray-200 px-4 py-2 text-[12px] font-medium text-gray-600 hover:bg-gray-50">
             닫기
           </button>
-          <button className="rounded-lg border border-red-200 px-4 py-2 text-[12px] font-medium text-red-600 hover:bg-red-50">
+          <button
+            onClick={handleDelete}
+            disabled={actionLoading}
+            className="rounded-lg border border-red-200 px-4 py-2 text-[12px] font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+          >
             삭제
           </button>
-          <button className="rounded-lg bg-blue-600 px-4 py-2 text-[12px] font-medium text-white hover:bg-blue-700">
-            수정
-          </button>
+          {log.status === "처리중" && (
+            <button
+              onClick={handleComplete}
+              disabled={actionLoading}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-[12px] font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              완료처리
+            </button>
+          )}
         </div>
       </div>
     </div>

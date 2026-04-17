@@ -1,17 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Wrench, Wind, Trash2, Upload } from "lucide-react";
-import { EQUIPMENTS } from "@/lib/mockData";
-import type { EventType, EquipmentLog, StatusType } from "@/lib/types";
+import type { EventType, Equipment, StatusType } from "@/lib/types";
 
 interface LogRegisterModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave?: (log: Omit<EquipmentLog, "id">) => void;
+  onSave?: () => void;
 }
 
 export default function LogRegisterModal({ isOpen, onClose, onSave }: LogRegisterModalProps) {
+  const [equipments, setEquipments] = useState<Equipment[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
   const [eventType, setEventType] = useState<EventType>("repair");
   const [equipmentId, setEquipmentId] = useState("");
   const [operator, setOperator] = useState("이준헌");
@@ -28,9 +31,24 @@ export default function LogRegisterModal({ isOpen, onClose, onSave }: LogRegiste
   const [cleaningType, setCleaningType] = useState("정기 클리닝");
   const [nextScheduledAt, setNextScheduledAt] = useState("");
 
+  useEffect(() => {
+    if (!isOpen) return;
+    setError("");
+    async function fetchEquipments() {
+      try {
+        const res = await fetch("/api/equipment");
+        if (res.ok) setEquipments(await res.json());
+      } catch (err) {
+        console.error("Failed to fetch equipments:", err);
+        setEquipments([]);
+      }
+    }
+    fetchEquipments();
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
-  const filteredEquipments = eventType === "vent" ? EQUIPMENTS.filter((e) => e.isVentTarget) : EQUIPMENTS;
+  const filteredEquipments = eventType === "vent" ? equipments.filter((e) => e.isVentTarget) : equipments;
 
   const typeButtons: { type: EventType; label: string; icon: typeof Wrench }[] = [
     { type: "repair", label: "수리🔧", icon: Wrench },
@@ -38,45 +56,66 @@ export default function LogRegisterModal({ isOpen, onClose, onSave }: LogRegiste
     { type: "cleaning", label: "클리닝🧹", icon: Trash2 },
   ];
 
-  function handleSave() {
+  async function handleSave() {
     if (!equipmentId) {
-      alert("장비를 선택해주세요.");
+      setError("장비를 선택해주세요.");
       return;
     }
     if (!description.trim()) {
-      alert("내용을 입력해주세요.");
+      setError("내용을 입력해주세요.");
       return;
     }
 
-    const selectedEquipment = EQUIPMENTS.find((e) => e.id === Number(equipmentId));
-    const newLog: Omit<EquipmentLog, "id"> = {
-      equipmentId: Number(equipmentId),
-      equipmentName: selectedEquipment?.name || "",
-      eventType,
-      occurredAt: occurredAt ? occurredAt.replace("T", " ") : new Date().toISOString().slice(0, 16).replace("T", " "),
-      operator,
-      description,
-      photoCount: 0,
-      status: eventType === "repair" ? repairStatus : "완료",
-      ...(eventType === "repair" && {
-        symptom,
-        replacedParts,
-        isExternal: isExternal === "외부업체",
-        vendorName: isExternal === "외부업체" ? vendorName : undefined,
-      }),
-      ...(eventType === "vent" && {
-        ventReason,
-        finalPressure,
-        pumpedDownAt: pumpedDownAt ? pumpedDownAt.replace("T", " ") : undefined,
-      }),
-      ...(eventType === "cleaning" && {
-        cleaningType,
-        nextScheduledAt,
-      }),
-    };
+    setSaving(true);
+    setError("");
 
-    onSave?.(newLog);
-    onClose();
+    try {
+      const body: Record<string, unknown> = {
+        equipmentId: Number(equipmentId),
+        eventType,
+        occurredAt: occurredAt || new Date().toISOString(),
+        operator,
+        description,
+        status: eventType === "repair" ? repairStatus : "완료",
+        photoUrls: [],
+      };
+
+      if (eventType === "repair") {
+        body.symptom = symptom || null;
+        body.replacedParts = replacedParts || null;
+        body.isExternal = isExternal === "외부업체";
+        body.vendorName = isExternal === "외부업체" ? vendorName : null;
+      }
+      if (eventType === "vent") {
+        body.ventReason = ventReason || null;
+        body.finalPressure = finalPressure || null;
+        body.pumpedDownAt = pumpedDownAt || null;
+      }
+      if (eventType === "cleaning") {
+        body.cleaningType = cleaningType || null;
+        body.nextScheduledAt = nextScheduledAt || null;
+      }
+
+      const res = await fetch("/api/logs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || "저장에 실패했습니다.");
+        return;
+      }
+
+      onSave?.();
+      onClose();
+    } catch (err) {
+      console.error("Save log error:", err);
+      setError("저장 중 오류가 발생했습니다.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -93,6 +132,10 @@ export default function LogRegisterModal({ isOpen, onClose, onSave }: LogRegiste
         </div>
 
         <div className="max-h-[70vh] overflow-y-auto px-5 py-4 space-y-4">
+          {error && (
+            <div className="rounded-lg bg-red-50 px-3 py-2 text-[12px] text-red-600">{error}</div>
+          )}
+
           <div>
             <label className="mb-1.5 block text-[11px] font-semibold text-gray-500">유형 선택</label>
             <div className="flex gap-2">
@@ -165,30 +208,16 @@ export default function LogRegisterModal({ isOpen, onClose, onSave }: LogRegiste
               <p className="text-[11px] font-semibold text-gray-500">수리 정보</p>
               <div>
                 <label className="mb-1 block text-[11px] text-gray-500">고장 증상</label>
-                <input
-                  type="text"
-                  value={symptom}
-                  onChange={(e) => setSymptom(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"
-                />
+                <input type="text" value={symptom} onChange={(e) => setSymptom(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400" />
               </div>
               <div>
                 <label className="mb-1 block text-[11px] text-gray-500">교체 부품</label>
-                <input
-                  type="text"
-                  value={replacedParts}
-                  onChange={(e) => setReplacedParts(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"
-                />
+                <input type="text" value={replacedParts} onChange={(e) => setReplacedParts(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="mb-1 block text-[11px] text-gray-500">외부 업체 여부</label>
-                  <select
-                    value={isExternal}
-                    onChange={(e) => setIsExternal(e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"
-                  >
+                  <select value={isExternal} onChange={(e) => setIsExternal(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400">
                     <option>자체수리</option>
                     <option>외부업체</option>
                   </select>
@@ -196,22 +225,13 @@ export default function LogRegisterModal({ isOpen, onClose, onSave }: LogRegiste
                 {isExternal === "외부업체" && (
                   <div>
                     <label className="mb-1 block text-[11px] text-gray-500">업체명</label>
-                    <input
-                      type="text"
-                      value={vendorName}
-                      onChange={(e) => setVendorName(e.target.value)}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"
-                    />
+                    <input type="text" value={vendorName} onChange={(e) => setVendorName(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400" />
                   </div>
                 )}
               </div>
               <div>
                 <label className="mb-1 block text-[11px] text-gray-500">완료 여부</label>
-                <select
-                  value={repairStatus}
-                  onChange={(e) => setRepairStatus(e.target.value as StatusType)}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"
-                >
+                <select value={repairStatus} onChange={(e) => setRepairStatus(e.target.value as StatusType)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400">
                   <option>처리중</option>
                   <option>완료</option>
                 </select>
@@ -224,36 +244,17 @@ export default function LogRegisterModal({ isOpen, onClose, onSave }: LogRegiste
               <p className="text-[11px] font-semibold text-gray-500">Vent 정보</p>
               <div>
                 <label className="mb-1 block text-[11px] text-gray-500">Vent 사유</label>
-                <select
-                  value={ventReason}
-                  onChange={(e) => setVentReason(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"
-                >
-                  <option>타겟 교체</option>
-                  <option>정기 점검</option>
-                  <option>수리</option>
-                  <option>클리닝</option>
-                  <option>기타</option>
+                <select value={ventReason} onChange={(e) => setVentReason(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400">
+                  <option>타겟 교체</option><option>정기 점검</option><option>수리</option><option>클리닝</option><option>기타</option>
                 </select>
               </div>
               <div>
                 <label className="mb-1 block text-[11px] text-gray-500">도달 압력</label>
-                <input
-                  type="text"
-                  value={finalPressure}
-                  onChange={(e) => setFinalPressure(e.target.value)}
-                  placeholder="예: 3.2e-6 Torr"
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"
-                />
+                <input type="text" value={finalPressure} onChange={(e) => setFinalPressure(e.target.value)} placeholder="예: 3.2e-6 Torr" className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400" />
               </div>
               <div>
                 <label className="mb-1 block text-[11px] text-gray-500">Pump-down 완료 시각</label>
-                <input
-                  type="datetime-local"
-                  value={pumpedDownAt}
-                  onChange={(e) => setPumpedDownAt(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"
-                />
+                <input type="datetime-local" value={pumpedDownAt} onChange={(e) => setPumpedDownAt(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400" />
               </div>
             </div>
           )}
@@ -263,25 +264,13 @@ export default function LogRegisterModal({ isOpen, onClose, onSave }: LogRegiste
               <p className="text-[11px] font-semibold text-gray-500">클리닝 정보</p>
               <div>
                 <label className="mb-1 block text-[11px] text-gray-500">클리닝 유형</label>
-                <select
-                  value={cleaningType}
-                  onChange={(e) => setCleaningType(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"
-                >
-                  <option>정기 클리닝</option>
-                  <option>챔버 세정</option>
-                  <option>비정기</option>
-                  <option>기타</option>
+                <select value={cleaningType} onChange={(e) => setCleaningType(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400">
+                  <option>정기 클리닝</option><option>챔버 세정</option><option>비정기</option><option>기타</option>
                 </select>
               </div>
               <div>
                 <label className="mb-1 block text-[11px] text-gray-500">다음 클리닝 예정일</label>
-                <input
-                  type="date"
-                  value={nextScheduledAt}
-                  onChange={(e) => setNextScheduledAt(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"
-                />
+                <input type="date" value={nextScheduledAt} onChange={(e) => setNextScheduledAt(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400" />
               </div>
             </div>
           )}
@@ -296,17 +285,15 @@ export default function LogRegisterModal({ isOpen, onClose, onSave }: LogRegiste
         </div>
 
         <div className="flex justify-end gap-2 border-t border-gray-100 px-5 py-3">
-          <button
-            onClick={onClose}
-            className="rounded-lg border border-gray-200 px-4 py-2 text-[12px] font-medium text-gray-600 hover:bg-gray-50"
-          >
+          <button onClick={onClose} className="rounded-lg border border-gray-200 px-4 py-2 text-[12px] font-medium text-gray-600 hover:bg-gray-50">
             취소
           </button>
           <button
             onClick={handleSave}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-[12px] font-medium text-white hover:bg-blue-700"
+            disabled={saving}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-[12px] font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
-            저장
+            {saving ? "저장 중..." : "저장"}
           </button>
         </div>
       </div>
