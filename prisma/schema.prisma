@@ -1,0 +1,59 @@
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["equipment"]
+}
+
+model Equipment {
+  id            Int      @id @default(autoincrement())
+  name          String   @db.VarChar(100)
+  category      String?  @db.VarChar(100)
+  isVentTarget  Boolean  @default(false) @map("is_vent_target")
+  description   String?  @db.Text
+  isActive      Boolean  @default(true)  @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  logs EquipmentLog[]
+
+  @@map("equipments")
+  @@schema("equipment")
+}
+
+model EquipmentLog {
+  id            Int       @id @default(autoincrement())
+  equipmentId   Int       @map("equipment_id")
+  eventType     String    @db.VarChar(20)  @map("event_type")
+  occurredAt    DateTime  @map("occurred_at")
+  operator      String    @db.VarChar(50)
+  description   String?   @db.Text
+  status        String    @default("처리중") @db.VarChar(20)
+
+  // 수리 전용
+  symptom       String?   @db.Text
+  replacedParts String?   @db.Text        @map("replaced_parts")
+  isExternal    Boolean   @default(false)  @map("is_external")
+  vendorName    String?   @db.VarChar(100) @map("vendor_name")
+
+  // Vent 전용
+  ventReason    String?   @db.VarChar(50)  @map("vent_reason")
+  finalPressure String?   @db.VarChar(50)  @map("final_pressure")
+  pumpedDownAt  DateTime? @map("pumped_down_at")
+
+  // 클리닝 전용
+  cleaningType      String?   @db.VarChar(50) @map("cleaning_type")
+  nextScheduledAt   DateTime? @map("next_scheduled_at") @db.Date
+
+  // 사진
+  photoUrls     String[]  @default([])    @map("photo_urls")
+
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  equipment Equipment @relation(fields: [equipmentId], references: [id])
+
+  @@map("equipment_logs")
+  @@schema("equipment")
+}
