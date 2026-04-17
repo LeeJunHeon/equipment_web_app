@@ -7,6 +7,7 @@ import type { EventType, EquipmentLog } from "@/lib/types";
 interface LogDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSave?: () => void;
   logId: number | null;
   logs: EquipmentLog[];
 }
@@ -28,7 +29,7 @@ function formatDate(dateStr: string | null | undefined) {
   return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
 }
 
-export default function LogDetailModal({ isOpen, onClose, logId, logs }: LogDetailModalProps) {
+export default function LogDetailModal({ isOpen, onClose, onSave, logId, logs }: LogDetailModalProps) {
   const [actionLoading, setActionLoading] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [deletedPhotoIds, setDeletedPhotoIds] = useState<Set<number>>(new Set());
@@ -53,6 +54,7 @@ export default function LogDetailModal({ isOpen, onClose, logId, logs }: LogDeta
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: log!.id, status: "완료" }),
       });
+      onSave?.();
       onClose();
     } catch (error) {
       console.error("Complete error:", error);
@@ -70,6 +72,7 @@ export default function LogDetailModal({ isOpen, onClose, logId, logs }: LogDeta
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: log!.id }),
       });
+      onSave?.();
       onClose();
     } catch (error) {
       console.error("Delete error:", error);

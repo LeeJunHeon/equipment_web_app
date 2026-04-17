@@ -108,10 +108,8 @@ export default function Home() {
       />
       <LogDetailModal
         isOpen={showDetailModal}
-        onClose={() => {
-          setShowDetailModal(false);
-          handleRefresh();
-        }}
+        onClose={() => setShowDetailModal(false)}
+        onSave={() => setRefreshKey((k) => k + 1)}
         logId={selectedLogId}
         logs={logs}
       />
