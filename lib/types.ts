@@ -13,6 +13,12 @@ export interface Equipment {
   unresolvedRepairCount: number;
 }
 
+export interface PhotoInfo {
+  id: number;
+  fileName: string;
+  fileSize: number | null;
+}
+
 export interface EquipmentLog {
   id: number;
   equipmentId: number;
@@ -21,7 +27,7 @@ export interface EquipmentLog {
   occurredAt: string;
   operator: string;
   description: string | null;
-  photoUrls: string[];
+  photos: PhotoInfo[];
   status: StatusType;
   symptom?: string | null;
   replacedParts?: string | null;

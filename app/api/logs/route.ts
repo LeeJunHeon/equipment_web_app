@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
       orderBy: { occurredAt: "desc" },
       include: {
         equipment: { select: { name: true } },
+        photos: { select: { id: true, fileName: true, fileSize: true } },
       },
     });
 
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     if (!equipmentId || !eventType || !occurredAt || !operator) {
       return NextResponse.json(
-        { error: "equipmentId, eventType, occurredAt, operator는 ���수입니다." },
+        { error: "equipmentId, eventType, occurredAt, operator는 필수입니다." },
         { status: 400 },
       );
     }
@@ -72,6 +73,7 @@ export async function POST(request: NextRequest) {
       },
       include: {
         equipment: { select: { name: true } },
+        photos: { select: { id: true, fileName: true, fileSize: true } },
       },
     });
 
@@ -91,7 +93,7 @@ export async function PATCH(request: NextRequest) {
     const { id, ...updateData } = body;
 
     if (!id) {
-      return NextResponse.json({ error: "이�� ID는 필수입니다." }, { status: 400 });
+      return NextResponse.json({ error: "이력 ID는 필수입니다." }, { status: 400 });
     }
 
     const data: Record<string, unknown> = {};
@@ -114,6 +116,7 @@ export async function PATCH(request: NextRequest) {
       data,
       include: {
         equipment: { select: { name: true } },
+        photos: { select: { id: true, fileName: true, fileSize: true } },
       },
     });
 
@@ -130,7 +133,7 @@ export async function DELETE(request: NextRequest) {
     const { id } = body;
 
     if (!id) {
-      return NextResponse.json({ error: "��력 ID는 필수입니다." }, { status: 400 });
+      return NextResponse.json({ error: "이력 ID는 필수입니다." }, { status: 400 });
     }
 
     await prisma.equipmentLog.delete({ where: { id } });

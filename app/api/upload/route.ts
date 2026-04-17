@@ -1,18 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { prisma } from "@/lib/prisma";
 
 const ALLOWED_EXTENSIONS = new Set(["jpg", "jpeg", "png", "heic", "webp"]);
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-
-function getUploadDir(): string {
-  return process.env.UPLOAD_DIR || "./public/uploads";
-}
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
+    const logIdStr = formData.get("logId") as string | null;
 
     if (!file) {
       return NextResponse.json({ error: "파일이 없습니다." }, { status: 400 });
@@ -22,9 +18,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "파일 크기는 10MB 이하여야 합니다." }, { status: 400 });
     }
 
-    const originalName = file.name;
-    const ext = originalName.split(".").pop()?.toLowerCase() || "";
-
+    const ext = file.name.split(".").pop()?.toLowerCase() || "";
     if (!ALLOWED_EXTENSIONS.has(ext)) {
       return NextResponse.json(
         { error: `허용되지 않는 파일 형식입니다. (허용: ${[...ALLOWED_EXTENSIONS].join(", ")})` },
@@ -32,27 +26,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const now = new Date();
-    const yyyy = now.getFullYear().toString();
-    const mm = String(now.getMonth() + 1).padStart(2, "0");
-    const dd = String(now.getDate()).padStart(2, "0");
-    const timestamp = now.getTime();
-    const safeName = originalName.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const fileName = `${timestamp}_${safeName}`;
-
-    const baseDir = getUploadDir();
-    const subDir = path.join("logs", yyyy, mm, dd);
-    const fullDir = path.join(baseDir, subDir);
-
-    await mkdir(fullDir, { recursive: true });
-
     const buffer = Buffer.from(await file.arrayBuffer());
-    const filePath = path.join(fullDir, fileName);
-    await writeFile(filePath, buffer);
+    const base64 = buffer.toString("base64");
 
-    const url = `/uploads/${subDir.replace(/\\/g, "/")}/${fileName}`;
+    const photo = await prisma.equipmentPhoto.create({
+      data: {
+        logId: logIdStr ? Number(logIdStr) : null,
+        fileName: file.name,
+        mimeType: file.type || `image/${ext}`,
+        fileData: base64,
+        fileSize: file.size,
+      },
+    });
 
-    return NextResponse.json({ url }, { status: 201 });
+    return NextResponse.json(
+      { id: photo.id, fileName: photo.fileName, fileSize: photo.fileSize },
+      { status: 201 },
+    );
   } catch (error) {
     console.error("POST /api/upload error:", error);
     return NextResponse.json({ error: "파일 업로드 실패" }, { status: 500 });

@@ -32,25 +32,38 @@ model EquipmentLog {
   description   String?   @db.Text
   status        String    @default("처리중") @db.VarChar(20)
 
-  // 수리 전용
   symptom       String?   @db.Text
   replacedParts String?   @db.Text        @map("replaced_parts")
   isExternal    Boolean   @default(false)  @map("is_external")
   vendorName    String?   @db.VarChar(100) @map("vendor_name")
 
-  // Vent 전용
   ventReason    String?   @db.VarChar(50)  @map("vent_reason")
   finalPressure String?   @db.VarChar(50)  @map("final_pressure")
   pumpedDownAt  DateTime? @map("pumped_down_at")
 
-  // 클리닝 전용
   cleaningType      String?   @db.VarChar(50) @map("cleaning_type")
   nextScheduledAt   DateTime? @map("next_scheduled_at") @db.Date
 
   createdAt     DateTime  @default(now()) @map("created_at")
 
-  equipment Equipment @relation(fields: [equipmentId], references: [id])
+  equipment Equipment        @relation(fields: [equipmentId], references: [id])
+  photos    EquipmentPhoto[]
 
   @@map("equipment_logs")
+  @@schema("equipment")
+}
+
+model EquipmentPhoto {
+  id        Int      @id @default(autoincrement())
+  logId     Int?     @map("log_id")
+  fileName  String   @db.VarChar(255) @map("file_name")
+  mimeType  String   @db.VarChar(50)  @map("mime_type")
+  fileData  String   @db.Text         @map("file_data")
+  fileSize  Int?     @map("file_size")
+  createdAt DateTime @default(now())  @map("created_at")
+
+  log EquipmentLog? @relation(fields: [logId], references: [id], onDelete: Cascade)
+
+  @@map("equipment_photos")
   @@schema("equipment")
 }

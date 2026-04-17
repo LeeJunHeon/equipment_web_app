@@ -173,9 +173,9 @@ export default function LogPage({ onDetailClick, onRegisterClick, filterType, re
                   <td className="px-4 py-2.5 text-gray-600">{log.operator}</td>
                   <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{formatDate(log.occurredAt)}</td>
                   <td className="px-4 py-2.5">
-                    {log.photoUrls && log.photoUrls.length > 0 && (
+                    {log.photos && log.photos.length > 0 && (
                       <span className="inline-flex items-center gap-0.5 text-gray-400">
-                        <Camera size={12} /> {log.photoUrls.length}
+                        <Camera size={12} /> {log.photos.length}
                       </span>
                     )}
                   </td>
