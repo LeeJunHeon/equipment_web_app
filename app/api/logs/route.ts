@@ -43,7 +43,6 @@ export async function POST(request: NextRequest) {
       symptom, replacedParts, isExternal, vendorName,
       ventReason, finalPressure, pumpedDownAt,
       cleaningType, nextScheduledAt,
-      photoUrls,
     } = body;
 
     if (!equipmentId || !eventType || !occurredAt || !operator) {
@@ -70,7 +69,6 @@ export async function POST(request: NextRequest) {
         pumpedDownAt: pumpedDownAt ? new Date(pumpedDownAt) : null,
         cleaningType: cleaningType || null,
         nextScheduledAt: nextScheduledAt ? new Date(nextScheduledAt) : null,
-        photoUrls: photoUrls || [],
       },
       include: {
         equipment: { select: { name: true } },
@@ -110,7 +108,6 @@ export async function PATCH(request: NextRequest) {
     if (updateData.pumpedDownAt !== undefined) data.pumpedDownAt = updateData.pumpedDownAt ? new Date(updateData.pumpedDownAt) : null;
     if (updateData.cleaningType !== undefined) data.cleaningType = updateData.cleaningType;
     if (updateData.nextScheduledAt !== undefined) data.nextScheduledAt = updateData.nextScheduledAt ? new Date(updateData.nextScheduledAt) : null;
-    if (updateData.photoUrls !== undefined) data.photoUrls = updateData.photoUrls;
 
     const log = await prisma.equipmentLog.update({
       where: { id },
