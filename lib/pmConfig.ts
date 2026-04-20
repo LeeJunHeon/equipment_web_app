@@ -33,8 +33,8 @@ export function getPmStatus(
 
 export function getPmStatusLabel(status: PmStatus): string {
   switch (status) {
-    case "overdue": return "주기 초과";
-    case "caution": return "주의";
+    case "overdue": return "점검 필요";
+    case "caution": return "점검 임박";
     case "normal": return "정상";
   }
 }

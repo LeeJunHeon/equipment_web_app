@@ -77,7 +77,7 @@ export default function Header({
               {pmIssueCount > 0 && (
                 <div className="px-4 py-3 border-t border-gray-50">
                   <p className="text-sm text-gray-700">
-                    PM 주기가 지난 장비가{" "}
+                    정기 점검이 필요한 장비가{" "}
                     <span className="font-bold text-yellow-500">{pmIssueCount}개</span>{" "}
                     있습니다.
                   </p>

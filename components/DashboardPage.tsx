@@ -91,7 +91,7 @@ export default function DashboardPage({
       icon: <AlertTriangle size={18} className="text-red-600" />,
     },
     {
-      label: "PM 주의 장비",
+      label: "정기 점검 필요",
       value: pmIssueCount,
       iconBg: "bg-yellow-100",
       icon: <ShieldAlert size={18} className="text-yellow-600" />,
@@ -138,7 +138,7 @@ export default function DashboardPage({
         <div>
           <h2 className="mb-3 text-[14px] font-bold text-gray-900 flex items-center gap-2">
             <ShieldAlert size={15} className="text-yellow-500" />
-            PM 주의 장비
+            정기 점검 필요
           </h2>
           <div className="space-y-2">
             {pmIssueEquipments.map((eq) => {

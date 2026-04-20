@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Home, Wrench, X, LogOut, Settings, ChevronRight } from "lucide-react";
+import { Home, Wrench, X, LogOut, Settings } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import type { Equipment } from "@/lib/types";
 
@@ -145,11 +145,7 @@ export default function Sidebar({
                       : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                   }`}
                 >
-                  <ChevronRight
-                    size={15}
-                    className={isActive ? "text-blue-500" : "text-gray-300"}
-                  />
-                  <span className="flex-1 text-left truncate">{eq.name}</span>
+<span className="flex-1 text-left truncate">{eq.name}</span>
                   {eq.unresolvedRepairCount > 0 && (
                     <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
                       {eq.unresolvedRepairCount}
