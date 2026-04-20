@@ -26,6 +26,7 @@ export default function Sidebar({
 }: SidebarProps) {
   const { data: session } = useSession();
   const [equipments, setEquipments] = useState<Equipment[]>([]);
+  const [equipmentsLoaded, setEquipmentsLoaded] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const userName = session?.user?.name ?? "사용자";
@@ -39,8 +40,14 @@ export default function Sidebar({
   useEffect(() => {
     fetch("/api/equipment")
       .then((r) => (r.ok ? r.json() : []))
-      .then(setEquipments)
-      .catch(() => setEquipments([]));
+      .then((data) => {
+        setEquipments(data);
+        setEquipmentsLoaded(true);
+      })
+      .catch(() => {
+        setEquipments([]);
+        setEquipmentsLoaded(true);
+      });
   }, []);
 
   const totalUnresolved = equipments.reduce(
@@ -113,11 +120,16 @@ export default function Sidebar({
             <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
               장비
             </p>
-            {equipments.length === 0 && (
+            {!equipmentsLoaded && (
               <div className="space-y-1 px-1">
                 {[...Array(3)].map((_, i) => (
                   <div key={i} className="h-10 bg-gray-100 rounded-xl animate-pulse" />
                 ))}
+              </div>
+            )}
+            {equipmentsLoaded && equipments.length === 0 && (
+              <div className="px-3 py-2 text-[11px] text-gray-400">
+                등록된 장비가 없습니다.
               </div>
             )}
             {equipments.map((eq) => {
