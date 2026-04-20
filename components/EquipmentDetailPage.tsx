@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Wrench, Wind, Sparkles, Plus } from "lucide-react";
-import type { Equipment, EquipmentLog } from "@/lib/types";
+import { Wrench, Wind, Sparkles, Plus, ChevronDown, ChevronRight, ImageIcon } from "lucide-react";
+import type { Equipment, EquipmentLog, LogEntry } from "@/lib/types";
+import RepairEntryModal from "@/components/modals/RepairEntryModal";
 
 type Tab = "repair" | "maintenance";
 
@@ -27,6 +28,15 @@ export default function EquipmentDetailPage({
   const [logs, setLogs] = useState<EquipmentLog[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // 일일 기록: logId → LogEntry[]
+  const [entriesMap, setEntriesMap] = useState<Record<number, LogEntry[]>>({});
+  const [expandedLogIds, setExpandedLogIds] = useState<Set<number>>(new Set());
+  const [loadingEntries, setLoadingEntries] = useState<Set<number>>(new Set());
+
+  // RepairEntryModal 상태
+  const [showEntryModal, setShowEntryModal] = useState(false);
+  const [entryTargetLogId, setEntryTargetLogId] = useState<number | null>(null);
+
   const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
@@ -41,7 +51,84 @@ export default function EquipmentDetailPage({
 
   useEffect(() => {
     fetchLogs();
+    // 장비가 바뀌면 펼침 상태 초기화
+    setExpandedLogIds(new Set());
+    setEntriesMap({});
   }, [fetchLogs]);
+
+  // 특정 수리 케이스의 일일 기록 로드
+  async function loadEntries(logId: number) {
+    if (entriesMap[logId]) return; // 이미 로드됨
+    setLoadingEntries((prev) => new Set(prev).add(logId));
+    try {
+      const res = await fetch(`/api/logs/${logId}/entries`);
+      if (res.ok) {
+        const data: LogEntry[] = await res.json();
+        setEntriesMap((prev) => ({ ...prev, [logId]: data }));
+      }
+    } catch {
+      setEntriesMap((prev) => ({ ...prev, [logId]: [] }));
+    } finally {
+      setLoadingEntries((prev) => {
+        const next = new Set(prev);
+        next.delete(logId);
+        return next;
+      });
+    }
+  }
+
+  // 날짜 토글
+  async function toggleExpand(logId: number) {
+    const next = new Set(expandedLogIds);
+    if (next.has(logId)) {
+      next.delete(logId);
+    } else {
+      next.add(logId);
+      await loadEntries(logId);
+    }
+    setExpandedLogIds(next);
+  }
+
+  // 일일 기록 저장 후 해당 케이스 엔트리 새로고침
+  async function handleEntrySaved() {
+    if (entryTargetLogId === null) return;
+    // 캐시 무효화 후 다시 로드
+    setEntriesMap((prev) => {
+      const next = { ...prev };
+      delete next[entryTargetLogId];
+      return next;
+    });
+    await loadEntries(entryTargetLogId);
+    // 자동으로 펼침
+    setExpandedLogIds((prev) => new Set(prev).add(entryTargetLogId));
+  }
+
+  // 날짜별 그룹핑 헬퍼
+  function groupEntriesByDate(entries: LogEntry[]) {
+    const map: Record<string, LogEntry[]> = {};
+    for (const e of entries) {
+      const date = e.occurredAt.split("T")[0];
+      if (!map[date]) map[date] = [];
+      map[date].push(e);
+    }
+    // 날짜 내림차순, 각 날짜 내에서는 시간 오름차순
+    return Object.entries(map)
+      .sort(([a], [b]) => b.localeCompare(a))
+      .map(([date, list]) => ({
+        date,
+        entries: list.sort((a, b) => a.occurredAt.localeCompare(b.occurredAt)),
+      }));
+  }
+
+  function formatTime(isoStr: string) {
+    const d = new Date(isoStr);
+    return d.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
+  }
+
+  function formatDate(dateStr: string) {
+    const [y, m, d] = dateStr.split("-");
+    return `${y.slice(2)}.${m}.${d}`;
+  }
 
   const repairLogs = logs.filter((l) => l.eventType === "repair");
   const maintenanceLogs = logs.filter(
@@ -69,6 +156,122 @@ export default function EquipmentDetailPage({
         <div className="h-16 bg-gray-100 rounded-xl" />
         <div className="h-10 bg-gray-100 rounded-xl" />
         <div className="h-40 bg-gray-100 rounded-xl" />
+      </div>
+    );
+  }
+
+  // 수리 카드 렌더링 (처리중/완료 공용)
+  function renderRepairCard(log: EquipmentLog) {
+    const isExpanded = expandedLogIds.has(log.id);
+    const isLoading = loadingEntries.has(log.id);
+    const entries = entriesMap[log.id] ?? [];
+    const grouped = groupEntriesByDate(entries);
+    const isUnresolved = log.status === "처리중";
+
+    return (
+      <div
+        key={log.id}
+        className={`bg-white rounded-xl border shadow-sm overflow-hidden ${
+          isUnresolved
+            ? "border-red-100 border-l-4 border-l-red-400"
+            : "border-gray-100"
+        }`}
+      >
+        {/* 케이스 헤더 */}
+        <div className="p-3">
+          <div className="flex items-start justify-between">
+            <div className="min-w-0 flex-1">
+              <p className={`text-[13px] font-semibold truncate ${isUnresolved ? "text-gray-900" : "text-gray-700"}`}>
+                {log.symptom ?? "증상 미입력"}
+              </p>
+              <p className="text-[11px] text-gray-400 mt-0.5">
+                {log.occurredAt.split("T")[0]} · {log.operator}
+                {isUnresolved && (
+                  <span className="ml-1 text-red-500 font-medium">
+                    · {daysSince(log.occurredAt)}일 경과
+                  </span>
+                )}
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 ml-2 shrink-0">
+              <button
+                onClick={() => onDetailClick(log.id)}
+                className="text-[11px] font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded-lg"
+              >
+                상세
+              </button>
+            </div>
+          </div>
+
+          {/* 일일 기록 토글 버튼 */}
+          <button
+            onClick={() => toggleExpand(log.id)}
+            className="mt-2 flex items-center gap-1 text-[11px] text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            {isExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+            진행 기록
+            {entries.length > 0 && (
+              <span className="ml-1 text-gray-400">({entries.length}건)</span>
+            )}
+          </button>
+        </div>
+
+        {/* 일일 기록 펼침 영역 */}
+        {isExpanded && (
+          <div className="border-t border-gray-100 bg-gray-50 px-3 py-2 space-y-3">
+            {isLoading && (
+              <div className="py-3 text-center text-[12px] text-gray-400 animate-pulse">
+                로딩 중...
+              </div>
+            )}
+
+            {!isLoading && grouped.length === 0 && (
+              <div className="py-3 text-center text-[12px] text-gray-400">
+                아직 진행 기록이 없습니다.
+              </div>
+            )}
+
+            {!isLoading && grouped.map(({ date, entries: dayEntries }) => (
+              <div key={date}>
+                <p className="text-[10px] font-bold text-gray-500 mb-1.5">
+                  {formatDate(date)}
+                </p>
+                <div className="space-y-1.5 pl-2 border-l-2 border-gray-200">
+                  {dayEntries.map((entry) => (
+                    <div key={entry.id} className="flex gap-2 text-[11px]">
+                      <span className="text-gray-400 shrink-0 pt-0.5">
+                        {formatTime(entry.occurredAt)}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        {entry.memo && (
+                          <p className="text-gray-700 leading-relaxed">{entry.memo}</p>
+                        )}
+                        {entry.photos.length > 0 && (
+                          <div className="flex items-center gap-1 mt-0.5 text-gray-400">
+                            <ImageIcon size={11} />
+                            <span>사진 {entry.photos.length}장</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            {/* 오늘 기록 추가 버튼 */}
+            <button
+              onClick={() => {
+                setEntryTargetLogId(log.id);
+                setShowEntryModal(true);
+              }}
+              className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-gray-300 text-[11px] font-medium text-gray-500 hover:border-blue-400 hover:text-blue-600 transition-colors"
+            >
+              <Plus size={12} />
+              오늘 기록 추가
+            </button>
+          </div>
+        )}
       </div>
     );
   }
@@ -147,53 +350,14 @@ export default function EquipmentDetailPage({
           {unresolvedRepairs.length > 0 && (
             <div className="space-y-2">
               <p className="text-[11px] font-semibold text-red-500 uppercase tracking-wider">처리 중</p>
-              {unresolvedRepairs.map((log) => (
-                <div key={log.id} className="bg-white rounded-xl border border-red-100 border-l-4 border-l-red-400 p-3 shadow-sm">
-                  <div className="flex items-start justify-between">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[13px] font-semibold text-gray-900 truncate">
-                        {log.symptom ?? "증상 미입력"}
-                      </p>
-                      <p className="text-[11px] text-gray-400 mt-0.5">
-                        {log.occurredAt.split("T")[0]} · {log.operator} ·{" "}
-                        <span className="text-red-500 font-medium">{daysSince(log.occurredAt)}일 경과</span>
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => onDetailClick(log.id)}
-                      className="ml-3 shrink-0 text-[11px] font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg"
-                    >
-                      상세
-                    </button>
-                  </div>
-                </div>
-              ))}
+              {unresolvedRepairs.map(renderRepairCard)}
             </div>
           )}
 
           {resolvedRepairs.length > 0 && (
             <div className="space-y-2">
               <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">완료</p>
-              {resolvedRepairs.map((log) => (
-                <div key={log.id} className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
-                  <div className="flex items-start justify-between">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[13px] font-medium text-gray-700 truncate">
-                        {log.symptom ?? "증상 미입력"}
-                      </p>
-                      <p className="text-[11px] text-gray-400 mt-0.5">
-                        {log.occurredAt.split("T")[0]} · {log.operator}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => onDetailClick(log.id)}
-                      className="ml-3 shrink-0 text-[11px] font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg"
-                    >
-                      상세
-                    </button>
-                  </div>
-                </div>
-              ))}
+              {resolvedRepairs.map(renderRepairCard)}
             </div>
           )}
 
@@ -208,7 +372,6 @@ export default function EquipmentDetailPage({
       {/* 유지 보수 탭 */}
       {activeTab === "maintenance" && (
         <div className="space-y-3">
-          {/* 마지막 실시 요약 */}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
               <div className="flex items-center gap-2 mb-1">
@@ -240,7 +403,6 @@ export default function EquipmentDetailPage({
             </div>
           </div>
 
-          {/* 등록 버튼 */}
           <div className="flex gap-2">
             {equipment.isVentTarget && (
               <button
@@ -260,7 +422,6 @@ export default function EquipmentDetailPage({
             </button>
           </div>
 
-          {/* 유지 보수 이력 */}
           <div className="space-y-2">
             <p className="text-[13px] font-semibold text-gray-700">
               유지 보수 이력 ({maintenanceLogs.length}건)
@@ -301,6 +462,19 @@ export default function EquipmentDetailPage({
             )}
           </div>
         </div>
+      )}
+
+      {/* 진행 기록 추가 모달 */}
+      {entryTargetLogId !== null && (
+        <RepairEntryModal
+          isOpen={showEntryModal}
+          logId={entryTargetLogId}
+          onClose={() => {
+            setShowEntryModal(false);
+            setEntryTargetLogId(null);
+          }}
+          onSave={handleEntrySaved}
+        />
       )}
     </div>
   );
