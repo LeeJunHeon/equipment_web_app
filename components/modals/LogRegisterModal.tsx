@@ -31,7 +31,9 @@ export default function LogRegisterModal({
   const [occurredAt, setOccurredAt] = useState("");
   const [description, setDescription] = useState("");
   const [symptom, setSymptom] = useState("");
-  const [replacedParts, setReplacedParts] = useState("");
+  const [partsList, setPartsList] = useState<{ name: string; qty: number }[]>([]);
+  const [newPartName, setNewPartName] = useState("");
+  const [newPartQty, setNewPartQty] = useState(1);
   const [isExternal, setIsExternal] = useState("자체수리");
   const [vendorName, setVendorName] = useState("");
   const [repairStatus, setRepairStatus] = useState<StatusType>("처리중");
@@ -45,6 +47,9 @@ export default function LogRegisterModal({
     if (!isOpen) return;
     setError("");
     setSelectedFiles([]);
+    setPartsList([]);
+    setNewPartName("");
+    setNewPartQty(1);
     if (defaultEventType) setEventType(defaultEventType);
     if (defaultEquipmentId) setEquipmentId(String(defaultEquipmentId));
     async function fetchEquipments() {
@@ -88,7 +93,8 @@ export default function LogRegisterModal({
 
       if (eventType === "repair") {
         body.symptom = symptom || null;
-        body.replacedParts = replacedParts || null;
+        body.replacedParts =
+          partsList.length > 0 ? JSON.stringify(partsList) : null;
         body.isExternal = isExternal === "외부업체";
         body.vendorName = isExternal === "외부업체" ? vendorName : null;
       }
@@ -185,7 +191,65 @@ export default function LogRegisterModal({
             <div className="space-y-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
               <p className="text-[11px] font-semibold text-gray-500">수리 정보</p>
               <div><label className="mb-1 block text-[11px] text-gray-500">고장 증상</label><input type="text" value={symptom} onChange={(e) => setSymptom(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400" /></div>
-              <div><label className="mb-1 block text-[11px] text-gray-500">교체 부품</label><input type="text" value={replacedParts} onChange={(e) => setReplacedParts(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400" /></div>
+              <div>
+                <label className="mb-1 block text-[11px] text-gray-500">교체 부품</label>
+
+                {partsList.length > 0 && (
+                  <div className="mb-2 space-y-1">
+                    {partsList.map((p, i) => (
+                      <div key={i} className="flex items-center gap-2 rounded-lg bg-white border border-gray-200 px-3 py-1.5">
+                        <span className="flex-1 text-[12px] text-gray-800">{p.name}</span>
+                        <span className="text-[12px] text-gray-500">{p.qty}개</span>
+                        <button
+                          type="button"
+                          onClick={() => setPartsList((prev) => prev.filter((_, idx) => idx !== i))}
+                          className="text-gray-300 hover:text-red-400 text-[11px]"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="text"
+                    value={newPartName}
+                    onChange={(e) => setNewPartName(e.target.value)}
+                    placeholder="부품명 (예: 볼트)"
+                    className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && newPartName.trim()) {
+                        e.preventDefault();
+                        setPartsList((prev) => [...prev, { name: newPartName.trim(), qty: newPartQty }]);
+                        setNewPartName("");
+                        setNewPartQty(1);
+                      }
+                    }}
+                  />
+                  <input
+                    type="number"
+                    min={1}
+                    value={newPartQty}
+                    onChange={(e) => setNewPartQty(Math.max(1, Number(e.target.value)))}
+                    className="w-16 rounded-lg border border-gray-200 px-2 py-2 text-[12px] outline-none focus:border-blue-400 text-center"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!newPartName.trim()) return;
+                      setPartsList((prev) => [...prev, { name: newPartName.trim(), qty: newPartQty }]);
+                      setNewPartName("");
+                      setNewPartQty(1);
+                    }}
+                    className="rounded-lg bg-gray-100 hover:bg-gray-200 px-3 py-2 text-[12px] font-medium text-gray-600 whitespace-nowrap"
+                  >
+                    + 추가
+                  </button>
+                </div>
+                <p className="mt-1 text-[10px] text-gray-400">부품명 입력 후 Enter 또는 + 추가 클릭</p>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div><label className="mb-1 block text-[11px] text-gray-500">외부 업체 여부</label><select value={isExternal} onChange={(e) => setIsExternal(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"><option>자체수리</option><option>외부업체</option></select></div>
                 {isExternal === "외부업체" && (<div><label className="mb-1 block text-[11px] text-gray-500">업체명</label><input type="text" value={vendorName} onChange={(e) => setVendorName(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400" /></div>)}
