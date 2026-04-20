@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, Camera, FileText, Send } from "lucide-react";
 import PhotoUploader from "@/components/ui/PhotoUploader";
+import VoiceInput from "@/components/ui/VoiceInput";
 
 interface RepairEntryModalProps {
   isOpen: boolean;
@@ -141,9 +142,13 @@ export default function RepairEntryModal({
 
           {(mode === "memo" || mode === "both") && (
             <div>
-              <label className="mb-1.5 block text-[11px] font-semibold text-gray-500">
-                메모
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-[11px] font-semibold text-gray-500">메모</label>
+                <VoiceInput
+                  onResult={(text) => setMemo((prev) => prev ? prev + " " + text : text)}
+                  disabled={saving}
+                />
+              </div>
               <textarea
                 value={memo}
                 onChange={(e) => setMemo(e.target.value)}

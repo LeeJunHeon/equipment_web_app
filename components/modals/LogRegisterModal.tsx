@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { X, Wrench, Wind, Trash2 } from "lucide-react";
 import type { EventType, Equipment, StatusType } from "@/lib/types";
 import PhotoUploader from "@/components/ui/PhotoUploader";
+import VoiceInput from "@/components/ui/VoiceInput";
 
 interface LogRegisterModalProps {
   isOpen: boolean;
@@ -183,14 +184,29 @@ export default function LogRegisterModal({
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[11px] font-semibold text-gray-500">내용</label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-[11px] font-semibold text-gray-500">내용</label>
+              <VoiceInput
+                onResult={(text) => setDescription((prev) => prev ? prev + " " + text : text)}
+                disabled={saving}
+              />
+            </div>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400 resize-none" placeholder="상세 내용을 입력하세요..." />
           </div>
 
           {eventType === "repair" && (
             <div className="space-y-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
               <p className="text-[11px] font-semibold text-gray-500">수리 정보</p>
-              <div><label className="mb-1 block text-[11px] text-gray-500">고장 증상</label><input type="text" value={symptom} onChange={(e) => setSymptom(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400" /></div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] text-gray-500">고장 증상</label>
+                  <VoiceInput
+                    onResult={(text) => setSymptom((prev) => prev ? prev + " " + text : text)}
+                    disabled={saving}
+                  />
+                </div>
+                <input type="text" value={symptom} onChange={(e) => setSymptom(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400" />
+              </div>
               <div>
                 <label className="mb-1 block text-[11px] text-gray-500">교체 부품</label>
 
