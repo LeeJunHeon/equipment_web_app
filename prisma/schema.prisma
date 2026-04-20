@@ -12,8 +12,9 @@ model Equipment {
   id            Int      @id @default(autoincrement())
   name          String   @db.VarChar(100)
   category      String?  @db.VarChar(100)
-  isVentTarget  Boolean  @default(false) @map("is_vent_target")
-  description   String?  @db.Text
+  isVentTarget     Boolean  @default(false) @map("is_vent_target")
+  isCleaningTarget Boolean  @default(true)  @map("is_cleaning_target")
+  description      String?  @db.Text
   isActive             Boolean  @default(true)  @map("is_active")
   ventIntervalDays     Int      @default(30)    @map("vent_interval_days")
   cleaningIntervalDays Int      @default(14)    @map("cleaning_interval_days")

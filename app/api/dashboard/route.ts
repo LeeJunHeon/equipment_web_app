@@ -40,7 +40,9 @@ export async function GET() {
 
       // PM 상태
       const ventStatus = getPmStatus(lastVentDate, eq.ventIntervalDays);
-      const cleaningStatus = getPmStatus(lastCleaningDate, eq.cleaningIntervalDays);
+      const cleaningStatus = eq.isCleaningTarget === false
+        ? "normal"
+        : getPmStatus(lastCleaningDate, eq.cleaningIntervalDays);
 
       // 이번 달 가동률 계산
       // 수리 중인 기간(시작~완료 or 시작~지금)을 비가동 시간으로 계산
@@ -71,6 +73,7 @@ export async function GET() {
         name: eq.name,
         category: eq.category,
         isVentTarget: eq.isVentTarget,
+        isCleaningTarget: eq.isCleaningTarget,
         unresolvedRepairCount: unresolvedRepairs.length,
         unresolvedRepairs: unresolvedRepairs.map((r) => ({
           id: r.id,

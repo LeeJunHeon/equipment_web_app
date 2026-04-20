@@ -17,6 +17,7 @@ export default function EquipmentModal({ isOpen, onClose }: EquipmentModalProps)
   const [formName, setFormName] = useState("");
   const [formCategory, setFormCategory] = useState("");
   const [formIsVent, setFormIsVent] = useState(false);
+  const [formIsCleaning, setFormIsCleaning] = useState(true);
   const [formVentInterval, setFormVentInterval] = useState(30);
   const [formCleaningInterval, setFormCleaningInterval] = useState(14);
 
@@ -45,6 +46,7 @@ export default function EquipmentModal({ isOpen, onClose }: EquipmentModalProps)
     setFormName(eq.name);
     setFormCategory(eq.category || "");
     setFormIsVent(eq.isVentTarget);
+    setFormIsCleaning(eq.isCleaningTarget ?? true);
     setFormVentInterval(eq.ventIntervalDays ?? 30);
     setFormCleaningInterval(eq.cleaningIntervalDays ?? 14);
     setIsAdding(false);
@@ -56,6 +58,7 @@ export default function EquipmentModal({ isOpen, onClose }: EquipmentModalProps)
     setFormName("");
     setFormCategory("");
     setFormIsVent(false);
+    setFormIsCleaning(true);
     setFormVentInterval(30);
     setFormCleaningInterval(14);
   }
@@ -66,6 +69,7 @@ export default function EquipmentModal({ isOpen, onClose }: EquipmentModalProps)
     setFormName("");
     setFormCategory("");
     setFormIsVent(false);
+    setFormIsCleaning(true);
     setFormVentInterval(30);
     setFormCleaningInterval(14);
   }
@@ -78,14 +82,14 @@ export default function EquipmentModal({ isOpen, onClose }: EquipmentModalProps)
         const res = await fetch("/api/equipment", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: formName, category: formCategory, isVentTarget: formIsVent, ventIntervalDays: formVentInterval, cleaningIntervalDays: formCleaningInterval }),
+          body: JSON.stringify({ name: formName, category: formCategory, isVentTarget: formIsVent, isCleaningTarget: formIsCleaning, ventIntervalDays: formVentInterval, cleaningIntervalDays: formCleaningInterval }),
         });
         if (!res.ok) return;
       } else if (editingId !== null) {
         const res = await fetch("/api/equipment", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: editingId, name: formName, category: formCategory, isVentTarget: formIsVent, ventIntervalDays: formVentInterval, cleaningIntervalDays: formCleaningInterval }),
+          body: JSON.stringify({ id: editingId, name: formName, category: formCategory, isVentTarget: formIsVent, isCleaningTarget: formIsCleaning, ventIntervalDays: formVentInterval, cleaningIntervalDays: formCleaningInterval }),
         });
         if (!res.ok) return;
       }
@@ -139,6 +143,10 @@ export default function EquipmentModal({ isOpen, onClose }: EquipmentModalProps)
                 <input type="checkbox" checked={formIsVent} onChange={(e) => setFormIsVent(e.target.checked)} className="rounded" />
                 Vent 기록 대상
               </label>
+              <label className="flex items-center gap-2 text-[12px] text-gray-600">
+                <input type="checkbox" checked={formIsCleaning} onChange={(e) => setFormIsCleaning(e.target.checked)} className="rounded" />
+                클리닝 기록 대상
+              </label>
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="mb-1 block text-[10px] font-semibold text-gray-500">Vent 주기 (일)</label>
@@ -181,6 +189,10 @@ export default function EquipmentModal({ isOpen, onClose }: EquipmentModalProps)
                       <input type="checkbox" checked={formIsVent} onChange={(e) => setFormIsVent(e.target.checked)} className="rounded" />
                       Vent 기록 대상
                     </label>
+                    <label className="flex items-center gap-2 text-[12px] text-gray-600">
+                      <input type="checkbox" checked={formIsCleaning} onChange={(e) => setFormIsCleaning(e.target.checked)} className="rounded" />
+                      클리닝 기록 대상
+                    </label>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className="mb-1 block text-[10px] font-semibold text-gray-500">Vent 주기 (일)</label>
@@ -216,6 +228,9 @@ export default function EquipmentModal({ isOpen, onClose }: EquipmentModalProps)
                         <span className="text-[11px] text-gray-500">{eq.category}</span>
                         {eq.isVentTarget && (
                           <span className="rounded bg-blue-50 px-1.5 py-0.5 text-[9px] font-medium text-blue-600">Vent 대상</span>
+                        )}
+                        {eq.isCleaningTarget === false && (
+                          <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[9px] font-medium text-gray-500">클리닝 제외</span>
                         )}
                       </div>
                     </div>

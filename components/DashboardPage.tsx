@@ -19,6 +19,7 @@ interface EquipmentDashboard {
   uptimePercent: number;
   ventIntervalDays: number;
   cleaningIntervalDays: number;
+  isCleaningTarget?: boolean;
 }
 
 interface DashboardData {
@@ -230,17 +231,19 @@ export default function DashboardPage({
                       </span>
                     </div>
                   )}
-                  <div className="flex items-center justify-between text-[11px]">
-                    <div className="flex items-center gap-1 text-gray-500">
-                      <Sparkles size={11} />
-                      <span>
-                        {`클리닝 · ${eq.lastCleaningDate ? `${daysSince(eq.lastCleaningDate)}일 전` : "기록 없음"} (${eq.cleaningIntervalDays}일 주기)`}
+                  {eq.isCleaningTarget !== false && (
+                    <div className="flex items-center justify-between text-[11px]">
+                      <div className="flex items-center gap-1 text-gray-500">
+                        <Sparkles size={11} />
+                        <span>
+                          {`클리닝 · ${eq.lastCleaningDate ? `${daysSince(eq.lastCleaningDate)}일 전` : "기록 없음"} (${eq.cleaningIntervalDays}일 주기)`}
+                        </span>
+                      </div>
+                      <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${cleaningColor.bg} ${cleaningColor.text}`}>
+                        {getPmStatusLabel(eq.cleaningStatus)}
                       </span>
                     </div>
-                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${cleaningColor.bg} ${cleaningColor.text}`}>
-                      {getPmStatusLabel(eq.cleaningStatus)}
-                    </span>
-                  </div>
+                  )}
                 </div>
 
                 {/* 가동률 */}

@@ -473,32 +473,34 @@ export default function EquipmentDetailPage({
                 );
               })()}
             </div>
-            <div className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
-              <div className="flex items-center gap-2 mb-1">
-                <Sparkles size={14} className="text-green-500" />
-                <span className="text-[11px] font-semibold text-gray-600">마지막 클리닝</span>
+            {equipment.isCleaningTarget !== false && (
+              <div className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
+                <div className="flex items-center gap-2 mb-1">
+                  <Sparkles size={14} className="text-green-500" />
+                  <span className="text-[11px] font-semibold text-gray-600">마지막 클리닝</span>
+                </div>
+                {(() => {
+                  const cleaningStatus = getPmStatus(lastCleaning?.occurredAt, equipment.cleaningIntervalDays ?? PM_CONFIG.cleaningIntervalDays);
+                  const color = getPmStatusColor(cleaningStatus);
+                  return lastCleaning ? (
+                    <>
+                      <p className="text-[13px] font-bold text-gray-900">{lastCleaning.occurredAt.split("T")[0]}</p>
+                      <p className="text-[11px] text-gray-400">{daysSince(lastCleaning.occurredAt)}일 전</p>
+                      <span className={`mt-1 inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full ${color.bg} ${color.text}`}>
+                        {getPmStatusLabel(cleaningStatus)} (주기 {equipment.cleaningIntervalDays ?? PM_CONFIG.cleaningIntervalDays}일)
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-[12px] text-gray-400">기록 없음</p>
+                      <span className="mt-1 inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">
+                        점검 필요
+                      </span>
+                    </>
+                  );
+                })()}
               </div>
-              {(() => {
-                const cleaningStatus = getPmStatus(lastCleaning?.occurredAt, equipment.cleaningIntervalDays ?? PM_CONFIG.cleaningIntervalDays);
-                const color = getPmStatusColor(cleaningStatus);
-                return lastCleaning ? (
-                  <>
-                    <p className="text-[13px] font-bold text-gray-900">{lastCleaning.occurredAt.split("T")[0]}</p>
-                    <p className="text-[11px] text-gray-400">{daysSince(lastCleaning.occurredAt)}일 전</p>
-                    <span className={`mt-1 inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full ${color.bg} ${color.text}`}>
-                      {getPmStatusLabel(cleaningStatus)} (주기 {equipment.cleaningIntervalDays ?? PM_CONFIG.cleaningIntervalDays}일)
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-[12px] text-gray-400">기록 없음</p>
-                    <span className="mt-1 inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">
-                      주기 초과
-                    </span>
-                  </>
-                );
-              })()}
-            </div>
+            )}
           </div>
 
           <div className="flex gap-2">
@@ -511,13 +513,15 @@ export default function EquipmentDetailPage({
                 Vent 등록
               </button>
             )}
-            <button
-              onClick={onRegisterCleaning}
-              className="flex items-center gap-1.5 bg-green-50 hover:bg-green-100 text-green-700 text-[12px] font-medium px-3 py-1.5 rounded-lg transition-colors"
-            >
-              <Plus size={13} />
-              클리닝 등록
-            </button>
+            {equipment.isCleaningTarget !== false && (
+              <button
+                onClick={onRegisterCleaning}
+                className="flex items-center gap-1.5 bg-green-50 hover:bg-green-100 text-green-700 text-[12px] font-medium px-3 py-1.5 rounded-lg transition-colors"
+              >
+                <Plus size={13} />
+                클리닝 등록
+              </button>
+            )}
           </div>
 
           <div className="space-y-2">

@@ -8,6 +8,7 @@ export interface Equipment {
   name: string;
   category: string | null;
   isVentTarget: boolean;
+  isCleaningTarget?: boolean;
   description?: string | null;
   isActive?: boolean;
   createdAt?: string;
