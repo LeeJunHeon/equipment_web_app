@@ -70,7 +70,6 @@ export default function DashboardPage({ onNavigate, onDetailClick, refreshKey }:
   if (loading) {
     return (
       <div className="space-y-5">
-        <h1 className="text-[18px] font-bold text-gray-900">대시보드</h1>
         <p className="text-[13px] text-gray-400">로딩 중...</p>
       </div>
     );
