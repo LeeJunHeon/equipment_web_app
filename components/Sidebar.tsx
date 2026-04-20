@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import {
-  LayoutDashboard, ClipboardList, Wrench,
+  Home, ClipboardList, Wrench,
   Wind, Trash2, Monitor, X, LogOut
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
@@ -37,7 +37,7 @@ export default function Sidebar({
     {
       label: "메인",
       items: [
-        { id: "dashboard" as PageId, label: "대시보드", icon: LayoutDashboard },
+        { id: "dashboard" as PageId, label: "대시보드", icon: Home },
         { id: "log" as PageId, label: "전체 이력", icon: ClipboardList, badge: unresolvedRepairCount },
       ],
     },
@@ -81,7 +81,7 @@ export default function Sidebar({
         <div className="px-5 py-5 border-b border-gray-100">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
                 <Wrench size={16} className="text-white" />
               </div>
               <div>
@@ -152,8 +152,12 @@ export default function Sidebar({
         {/* 사용자 정보 + 로그아웃 */}
         <div className="px-3 py-4 border-t border-gray-100">
           <div className="flex items-center gap-3 px-3 py-2">
-            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-xs font-bold text-blue-700 shrink-0">
-              {userName.charAt(0) || "?"}
+            <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600 shrink-0">
+              {(() => {
+                if (!userName || userName === "사용자") return "?";
+                const parts = userName.trim().split(" ");
+                return parts[0].charAt(0).toUpperCase();
+              })()}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-gray-900 truncate">{userName}</p>

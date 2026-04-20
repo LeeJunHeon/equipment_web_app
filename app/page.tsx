@@ -68,7 +68,7 @@ export default function Home() {
         <Header
           currentPage={currentPage}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          onRegisterClick={() => setShowRegisterModal(true)}
+          unresolvedCount={logs.filter(l => l.eventType === "repair" && l.status === "처리중").length}
         />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           {currentPage === "dashboard" && (

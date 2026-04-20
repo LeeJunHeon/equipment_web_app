@@ -1,12 +1,13 @@
 "use client";
 
-import { Menu, Plus } from "lucide-react";
+import { Menu, Bell } from "lucide-react";
+import { useState } from "react";
 import type { PageId } from "@/lib/types";
 
 interface HeaderProps {
   currentPage: PageId;
   onToggleSidebar: () => void;
-  onRegisterClick: () => void;
+  unresolvedCount: number;
 }
 
 const PAGE_TITLES: Record<PageId, string> = {
@@ -17,7 +18,9 @@ const PAGE_TITLES: Record<PageId, string> = {
   cleaning: "클리닝 이력",
 };
 
-export default function Header({ currentPage, onToggleSidebar, onRegisterClick }: HeaderProps) {
+export default function Header({ currentPage, onToggleSidebar, unresolvedCount }: HeaderProps) {
+  const [showNotif, setShowNotif] = useState(false);
+
   return (
     <header className="h-14 bg-white border-b border-gray-100 flex items-center justify-between px-4 sm:px-5 shrink-0">
       <div className="flex items-center gap-3">
@@ -31,13 +34,48 @@ export default function Header({ currentPage, onToggleSidebar, onRegisterClick }
           {PAGE_TITLES[currentPage]}
         </span>
       </div>
-      <button
-        onClick={onRegisterClick}
-        className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-medium px-3 py-2 rounded-lg transition-colors"
-      >
-        <Plus size={14} />
-        이력 등록
-      </button>
+
+      <div className="relative">
+        <button
+          onClick={() => setShowNotif(!showNotif)}
+          className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative"
+        >
+          <Bell size={18} className="text-gray-500" />
+          {unresolvedCount > 0 && (
+            <span className="absolute top-1 right-1 min-w-[16px] h-4 bg-rose-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white px-1">
+              {unresolvedCount}
+            </span>
+          )}
+        </button>
+
+        {showNotif && (
+          <>
+            <div className="fixed inset-0 z-10" onClick={() => setShowNotif(false)} />
+            <div className="absolute right-0 mt-1 w-72 bg-white border border-gray-200 rounded-xl shadow-lg z-20">
+              <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                <p className="text-sm font-bold text-gray-900">알림</p>
+                {unresolvedCount > 0 && (
+                  <span className="text-xs font-semibold text-rose-500">
+                    미해결 수리 {unresolvedCount}건
+                  </span>
+                )}
+              </div>
+              {unresolvedCount > 0 ? (
+                <div className="px-4 py-3">
+                  <p className="text-sm text-gray-700">
+                    미완료 수리 이력이 <span className="font-bold text-rose-500">{unresolvedCount}건</span> 있습니다.
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">수리 이력 탭에서 확인하세요.</p>
+                </div>
+              ) : (
+                <div className="px-4 py-4">
+                  <p className="text-sm text-gray-400 text-center">새로운 알림이 없습니다</p>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
     </header>
   );
 }
