@@ -40,3 +40,18 @@ export interface EquipmentLog {
   cleaningType?: string | null;
   nextScheduledAt?: string | null;
 }
+
+export interface EntryPhoto {
+  id: number;
+  fileName: string;
+  fileSize: number | null;
+}
+
+export interface LogEntry {
+  id: number;
+  logId: number;
+  memo: string | null;
+  occurredAt: string;
+  createdAt: string;
+  photos: EntryPhoto[];
+}
