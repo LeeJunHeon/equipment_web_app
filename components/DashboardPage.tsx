@@ -6,12 +6,11 @@ import type { PageId, Equipment, EquipmentLog } from "@/lib/types";
 
 interface DashboardPageProps {
   onNavigate: (page: PageId) => void;
-  onRegisterClick: () => void;
   onDetailClick: (logId: number) => void;
   refreshKey: number;
 }
 
-export default function DashboardPage({ onNavigate, onRegisterClick, onDetailClick, refreshKey }: DashboardPageProps) {
+export default function DashboardPage({ onNavigate, onDetailClick, refreshKey }: DashboardPageProps) {
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [logs, setLogs] = useState<EquipmentLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,8 +78,6 @@ export default function DashboardPage({ onNavigate, onRegisterClick, onDetailCli
 
   return (
     <div className="space-y-5">
-      <h1 className="text-[18px] font-bold text-gray-900">대시보드</h1>
-
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {stats.map((s) => (
           <div

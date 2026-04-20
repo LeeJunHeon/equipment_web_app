@@ -74,7 +74,6 @@ export default function Home() {
           {currentPage === "dashboard" && (
             <DashboardPage
               onNavigate={setCurrentPage}
-              onRegisterClick={() => setShowRegisterModal(true)}
               onDetailClick={handleDetailClick}
               refreshKey={refreshKey}
             />
