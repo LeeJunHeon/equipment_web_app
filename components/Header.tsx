@@ -2,24 +2,24 @@
 
 import { Menu, Bell } from "lucide-react";
 import { useState } from "react";
-import type { PageId } from "@/lib/types";
 
 interface HeaderProps {
-  currentPage: PageId;
+  currentPage: "dashboard" | "equipment";
+  equipmentName?: string;
   onToggleSidebar: () => void;
   unresolvedCount: number;
 }
 
-const PAGE_TITLES: Record<PageId, string> = {
-  dashboard: "대시보드",
-  log: "전체 이력",
-  repair: "수리 이력",
-  vent: "Vent 이력",
-  cleaning: "클리닝 이력",
-};
-
-export default function Header({ currentPage, onToggleSidebar, unresolvedCount }: HeaderProps) {
+export default function Header({
+  currentPage,
+  equipmentName,
+  onToggleSidebar,
+  unresolvedCount,
+}: HeaderProps) {
   const [showNotif, setShowNotif] = useState(false);
+
+  const pageTitle =
+    currentPage === "dashboard" ? "대시보드" : (equipmentName ?? "장비 상세");
 
   return (
     <header className="h-14 bg-white border-b border-gray-100 flex items-center justify-between px-4 sm:px-5 shrink-0">
@@ -30,9 +30,7 @@ export default function Header({ currentPage, onToggleSidebar, unresolvedCount }
         >
           <Menu size={18} className="text-gray-500" />
         </button>
-        <span className="text-sm font-semibold text-gray-700">
-          {PAGE_TITLES[currentPage]}
-        </span>
+        <span className="text-sm font-semibold text-gray-700">{pageTitle}</span>
       </div>
 
       <div className="relative">
@@ -63,9 +61,11 @@ export default function Header({ currentPage, onToggleSidebar, unresolvedCount }
               {unresolvedCount > 0 ? (
                 <div className="px-4 py-3">
                   <p className="text-sm text-gray-700">
-                    미완료 수리 이력이 <span className="font-bold text-rose-500">{unresolvedCount}건</span> 있습니다.
+                    미완료 수리 이력이{" "}
+                    <span className="font-bold text-rose-500">{unresolvedCount}건</span>{" "}
+                    있습니다.
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">수리 이력 탭에서 확인하세요.</p>
+                  <p className="text-xs text-gray-400 mt-1">각 장비 페이지에서 확인하세요.</p>
                 </div>
               ) : (
                 <div className="px-4 py-4">
