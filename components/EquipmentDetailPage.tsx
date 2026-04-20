@@ -453,14 +453,14 @@ export default function EquipmentDetailPage({
                 <span className="text-[11px] font-semibold text-gray-600">마지막 Vent</span>
               </div>
               {(() => {
-                const ventStatus = getPmStatus(lastVent?.occurredAt, PM_CONFIG.ventIntervalDays);
+                const ventStatus = getPmStatus(lastVent?.occurredAt, equipment.ventIntervalDays ?? PM_CONFIG.ventIntervalDays);
                 const color = getPmStatusColor(ventStatus);
                 return lastVent ? (
                   <>
                     <p className="text-[13px] font-bold text-gray-900">{lastVent.occurredAt.split("T")[0]}</p>
                     <p className="text-[11px] text-gray-400">{daysSince(lastVent.occurredAt)}일 전</p>
                     <span className={`mt-1 inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full ${color.bg} ${color.text}`}>
-                      {getPmStatusLabel(ventStatus)} (주기 {PM_CONFIG.ventIntervalDays}일)
+                      {getPmStatusLabel(ventStatus)} (주기 {equipment.ventIntervalDays ?? PM_CONFIG.ventIntervalDays}일)
                     </span>
                   </>
                 ) : (
@@ -479,14 +479,14 @@ export default function EquipmentDetailPage({
                 <span className="text-[11px] font-semibold text-gray-600">마지막 클리닝</span>
               </div>
               {(() => {
-                const cleaningStatus = getPmStatus(lastCleaning?.occurredAt, PM_CONFIG.cleaningIntervalDays);
+                const cleaningStatus = getPmStatus(lastCleaning?.occurredAt, equipment.cleaningIntervalDays ?? PM_CONFIG.cleaningIntervalDays);
                 const color = getPmStatusColor(cleaningStatus);
                 return lastCleaning ? (
                   <>
                     <p className="text-[13px] font-bold text-gray-900">{lastCleaning.occurredAt.split("T")[0]}</p>
                     <p className="text-[11px] text-gray-400">{daysSince(lastCleaning.occurredAt)}일 전</p>
                     <span className={`mt-1 inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full ${color.bg} ${color.text}`}>
-                      {getPmStatusLabel(cleaningStatus)} (주기 {PM_CONFIG.cleaningIntervalDays}일)
+                      {getPmStatusLabel(cleaningStatus)} (주기 {equipment.cleaningIntervalDays ?? PM_CONFIG.cleaningIntervalDays}일)
                     </span>
                   </>
                 ) : (

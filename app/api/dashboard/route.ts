@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getPmStatus, PM_CONFIG } from "@/lib/pmConfig";
+import { getPmStatus } from "@/lib/pmConfig";
 
 export async function GET() {
   try {
@@ -39,8 +39,8 @@ export async function GET() {
       const lastCleaningDate = cleaningLogs[0]?.occurredAt.toISOString() ?? undefined;
 
       // PM 상태
-      const ventStatus = getPmStatus(lastVentDate, PM_CONFIG.ventIntervalDays);
-      const cleaningStatus = getPmStatus(lastCleaningDate, PM_CONFIG.cleaningIntervalDays);
+      const ventStatus = getPmStatus(lastVentDate, eq.ventIntervalDays);
+      const cleaningStatus = getPmStatus(lastCleaningDate, eq.cleaningIntervalDays);
 
       // 이번 달 가동률 계산
       // 수리 중인 기간(시작~완료 or 시작~지금)을 비가동 시간으로 계산
@@ -83,6 +83,8 @@ export async function GET() {
         ventStatus,
         cleaningStatus,
         uptimePercent,
+        ventIntervalDays: eq.ventIntervalDays,
+        cleaningIntervalDays: eq.cleaningIntervalDays,
       };
     });
 

@@ -17,6 +17,8 @@ interface EquipmentDashboard {
   ventStatus: "normal" | "caution" | "overdue";
   cleaningStatus: "normal" | "caution" | "overdue";
   uptimePercent: number;
+  ventIntervalDays: number;
+  cleaningIntervalDays: number;
 }
 
 interface DashboardData {
@@ -220,10 +222,7 @@ export default function DashboardPage({
                       <div className="flex items-center gap-1 text-gray-500">
                         <Wind size={11} />
                         <span>
-                          Vent{" "}
-                          {eq.lastVentDate
-                            ? `${daysSince(eq.lastVentDate)}일 전`
-                            : "기록 없음"}
+                          {`Vent · ${eq.lastVentDate ? `${daysSince(eq.lastVentDate)}일 전` : "기록 없음"} (${eq.ventIntervalDays}일 주기)`}
                         </span>
                       </div>
                       <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${ventColor.bg} ${ventColor.text}`}>
@@ -235,10 +234,7 @@ export default function DashboardPage({
                     <div className="flex items-center gap-1 text-gray-500">
                       <Sparkles size={11} />
                       <span>
-                        클리닝{" "}
-                        {eq.lastCleaningDate
-                          ? `${daysSince(eq.lastCleaningDate)}일 전`
-                          : "기록 없음"}
+                        {`클리닝 · ${eq.lastCleaningDate ? `${daysSince(eq.lastCleaningDate)}일 전` : "기록 없음"} (${eq.cleaningIntervalDays}일 주기)`}
                       </span>
                     </div>
                     <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${cleaningColor.bg} ${cleaningColor.text}`}>
