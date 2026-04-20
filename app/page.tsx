@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { PageId, EquipmentLog } from "@/lib/types";
 import Sidebar from "@/components/Sidebar";
+import Header from "@/components/Header";
 import DashboardPage from "@/components/DashboardPage";
 import LogPage from "@/components/LogPage";
 import RepairPage from "@/components/RepairPage";
@@ -22,8 +23,9 @@ export default function Home() {
   const [logs, setLogs] = useState<EquipmentLog[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // 재고관리 앱과 동일: 1024px(lg) 미만이면 사이드바 닫힘
   useEffect(() => {
-    if (window.innerWidth < 768) setSidebarOpen(false);
+    if (window.innerWidth < 1024) setSidebarOpen(false);
   }, []);
 
   const fetchLogs = useCallback(async () => {
@@ -59,47 +61,54 @@ export default function Home() {
         onNavigate={setCurrentPage}
         onEquipmentClick={() => setShowEquipmentModal(true)}
         isOpen={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
+        onClose={() => setSidebarOpen(false)}
         logs={logs}
       />
-      <main className="flex-1 overflow-y-auto p-5 md:p-6">
-        {currentPage === "dashboard" && (
-          <DashboardPage
-            onNavigate={setCurrentPage}
-            onRegisterClick={() => setShowRegisterModal(true)}
-            onDetailClick={handleDetailClick}
-            refreshKey={refreshKey}
-          />
-        )}
-        {currentPage === "log" && (
-          <LogPage
-            onDetailClick={handleDetailClick}
-            onRegisterClick={() => setShowRegisterModal(true)}
-            refreshKey={refreshKey}
-          />
-        )}
-        {currentPage === "repair" && (
-          <RepairPage
-            onDetailClick={handleDetailClick}
-            onRegisterClick={() => setShowRegisterModal(true)}
-            refreshKey={refreshKey}
-          />
-        )}
-        {currentPage === "vent" && (
-          <VentPage
-            onDetailClick={handleDetailClick}
-            onRegisterClick={() => setShowRegisterModal(true)}
-            refreshKey={refreshKey}
-          />
-        )}
-        {currentPage === "cleaning" && (
-          <CleaningPage
-            onDetailClick={handleDetailClick}
-            onRegisterClick={() => setShowRegisterModal(true)}
-            refreshKey={refreshKey}
-          />
-        )}
-      </main>
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <Header
+          currentPage={currentPage}
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          onRegisterClick={() => setShowRegisterModal(true)}
+        />
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+          {currentPage === "dashboard" && (
+            <DashboardPage
+              onNavigate={setCurrentPage}
+              onRegisterClick={() => setShowRegisterModal(true)}
+              onDetailClick={handleDetailClick}
+              refreshKey={refreshKey}
+            />
+          )}
+          {currentPage === "log" && (
+            <LogPage
+              onDetailClick={handleDetailClick}
+              onRegisterClick={() => setShowRegisterModal(true)}
+              refreshKey={refreshKey}
+            />
+          )}
+          {currentPage === "repair" && (
+            <RepairPage
+              onDetailClick={handleDetailClick}
+              onRegisterClick={() => setShowRegisterModal(true)}
+              refreshKey={refreshKey}
+            />
+          )}
+          {currentPage === "vent" && (
+            <VentPage
+              onDetailClick={handleDetailClick}
+              onRegisterClick={() => setShowRegisterModal(true)}
+              refreshKey={refreshKey}
+            />
+          )}
+          {currentPage === "cleaning" && (
+            <CleaningPage
+              onDetailClick={handleDetailClick}
+              onRegisterClick={() => setShowRegisterModal(true)}
+              refreshKey={refreshKey}
+            />
+          )}
+        </main>
+      </div>
 
       <LogRegisterModal
         isOpen={showRegisterModal}

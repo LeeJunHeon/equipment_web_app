@@ -79,15 +79,7 @@ export default function DashboardPage({ onNavigate, onRegisterClick, onDetailCli
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <h1 className="text-[18px] font-bold text-gray-900">대시보드</h1>
-        <button
-          onClick={onRegisterClick}
-          className="rounded-lg bg-blue-600 px-3.5 py-2 text-[12px] font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
-        >
-          + 이력 등록
-        </button>
-      </div>
+      <h1 className="text-[18px] font-bold text-gray-900">대시보드</h1>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {stats.map((s) => (

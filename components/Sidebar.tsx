@@ -1,6 +1,10 @@
 "use client";
 
-import { LayoutDashboard, ClipboardList, Wrench, Wind, Trash2, Monitor, X, Menu } from "lucide-react";
+import { useState } from "react";
+import {
+  LayoutDashboard, ClipboardList, Wrench,
+  Wind, Trash2, Monitor, X, LogOut
+} from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import type { PageId, EquipmentLog } from "@/lib/types";
 
@@ -9,15 +13,21 @@ interface SidebarProps {
   onNavigate: (page: PageId) => void;
   onEquipmentClick: () => void;
   isOpen: boolean;
-  onToggle: () => void;
+  onClose: () => void;
   logs: EquipmentLog[];
 }
 
-export default function Sidebar({ currentPage, onNavigate, onEquipmentClick, isOpen, onToggle, logs }: SidebarProps) {
-  const { data: session, status } = useSession();
+export default function Sidebar({
+  currentPage,
+  onNavigate,
+  onEquipmentClick,
+  isOpen,
+  onClose,
+  logs,
+}: SidebarProps) {
+  const { data: session } = useSession();
   const userName = session?.user?.name ?? "사용자";
-  const initial = session?.user?.name?.[0] ?? "?";
-  const isLoading = status === "loading";
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const unresolvedRepairCount = logs.filter(
     (l) => l.eventType === "repair" && l.status === "처리중"
@@ -41,35 +51,55 @@ export default function Sidebar({ currentPage, onNavigate, onEquipmentClick, isO
     },
   ];
 
+  const handleNav = (page: PageId) => {
+    onNavigate(page);
+    if (window.innerWidth < 1024) onClose();
+  };
+
   return (
     <>
-      <button
-        className="fixed top-3 left-3 z-50 rounded-lg border border-gray-200 bg-white p-2 shadow-sm md:hidden"
-        onClick={onToggle}
-      >
-        <Menu size={18} />
-      </button>
-
+      {/* 모바일 오버레이 */}
       {isOpen && (
-        <div className="fixed inset-0 z-40 bg-black/30 md:hidden" onClick={onToggle} />
+        <div
+          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+          onClick={onClose}
+        />
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[196px] flex-col border-r border-gray-200 bg-white transition-transform md:static md:translate-x-0 ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`
+          fixed lg:static inset-y-0 left-0 z-50 flex flex-col
+          bg-white border-r border-gray-100
+          transition-all duration-300 shrink-0
+          ${isOpen
+            ? "w-64 translate-x-0"
+            : "-translate-x-full lg:translate-x-0 lg:w-0 lg:overflow-hidden lg:border-0"
+          }
+        `}
       >
-        <div className="flex items-center gap-2 px-4 py-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
-            <Wrench size={16} className="text-white" />
+        {/* 로고 */}
+        <div className="px-5 py-5 border-b border-gray-100">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <Wrench size={16} className="text-white" />
+              </div>
+              <div>
+                <h1 className="text-sm font-bold text-gray-900">장비 관리</h1>
+                <p className="text-[10px] text-gray-400">Equipment Manager</p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg hover:bg-gray-100 lg:hidden"
+            >
+              <X size={18} className="text-gray-400" />
+            </button>
           </div>
-          <span className="text-[14px] font-bold text-gray-900">장비 관리</span>
-          <button className="ml-auto md:hidden" onClick={onToggle}>
-            <X size={16} className="text-gray-400" />
-          </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-2 py-1">
+        {/* 네비게이션 */}
+        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
           {navSections.map((section) => (
             <div key={section.label} className="mb-2">
               <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
@@ -81,17 +111,14 @@ export default function Sidebar({ currentPage, onNavigate, onEquipmentClick, isO
                 return (
                   <button
                     key={item.id}
-                    onClick={() => {
-                      onNavigate(item.id);
-                      if (window.innerWidth < 768) onToggle();
-                    }}
-                    className={`flex w-full items-center gap-2 rounded-lg px-3 py-[7px] text-[12.5px] transition-colors ${
+                    onClick={() => handleNav(item.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
                       active
-                        ? "bg-blue-50 font-semibold text-blue-700"
-                        : "text-gray-600 hover:bg-gray-50"
+                        ? "bg-blue-50 text-blue-600 font-semibold"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                     }`}
                   >
-                    <Icon size={15} className={active ? "text-blue-600" : "text-gray-400"} />
+                    <Icon size={18} />
                     <span className="flex-1 text-left">{item.label}</span>
                     {item.badge ? (
                       <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
@@ -104,6 +131,7 @@ export default function Sidebar({ currentPage, onNavigate, onEquipmentClick, isO
             </div>
           ))}
 
+          {/* 관리자 섹션 */}
           <div className="mb-2">
             <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
               관리자
@@ -111,39 +139,63 @@ export default function Sidebar({ currentPage, onNavigate, onEquipmentClick, isO
             <button
               onClick={() => {
                 onEquipmentClick();
-                if (window.innerWidth < 768) onToggle();
+                if (window.innerWidth < 1024) onClose();
               }}
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-[7px] text-[12.5px] text-gray-600 transition-colors hover:bg-gray-50"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-600 transition-all hover:bg-gray-50 hover:text-gray-900"
             >
-              <Monitor size={15} className="text-gray-400" />
+              <Monitor size={18} className="text-gray-400" />
               <span>장비 목록</span>
             </button>
           </div>
         </nav>
 
-        <div className="border-t border-gray-100 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <div
-              className="flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold text-white"
-              style={{ backgroundColor: isLoading ? "#d1d5db" : "#3b82f6" }}
-            >
-              {isLoading ? "" : initial}
+        {/* 사용자 정보 + 로그아웃 */}
+        <div className="px-3 py-4 border-t border-gray-100">
+          <div className="flex items-center gap-3 px-3 py-2">
+            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-xs font-bold text-blue-700 shrink-0">
+              {userName.charAt(0) || "?"}
             </div>
-            <div className="flex flex-col min-w-0 flex-1">
-              <span className="text-[12px] font-medium text-gray-800 truncate">
-                {isLoading ? "..." : userName}
-              </span>
-              <span className="text-[10px] text-gray-400">관리자</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-gray-900 truncate">{userName}</p>
+              <p className="text-[10px] text-gray-400">관리자</p>
             </div>
             <button
-              onClick={() => signOut({ callbackUrl: "https://vanam.synology.me/login" })}
-              className="text-[10px] text-red-400 hover:text-red-600 transition-colors flex-shrink-0"
+              onClick={() => setShowLogoutConfirm(true)}
+              className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
+              title="로그아웃"
             >
-              로그아웃
+              <LogOut size={16} />
             </button>
           </div>
         </div>
       </aside>
+
+      {/* 로그아웃 확인 모달 */}
+      {showLogoutConfirm && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <h3 className="text-lg font-bold text-gray-900">로그아웃</h3>
+            <p className="text-sm text-gray-500">정말 로그아웃하시겠습니까?</p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200"
+              >
+                취소
+              </button>
+              <button
+                onClick={() => signOut({ callbackUrl: "https://vanam.synology.me/login" })}
+                className="px-4 py-2 text-sm font-bold text-white bg-rose-500 rounded-xl hover:bg-rose-600 transition-colors"
+              >
+                로그아웃
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
