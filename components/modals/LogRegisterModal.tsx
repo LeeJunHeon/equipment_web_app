@@ -9,9 +9,17 @@ interface LogRegisterModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave?: () => void;
+  defaultEventType?: "repair" | "vent" | "cleaning";
+  defaultEquipmentId?: number;
 }
 
-export default function LogRegisterModal({ isOpen, onClose, onSave }: LogRegisterModalProps) {
+export default function LogRegisterModal({
+  isOpen,
+  onClose,
+  onSave,
+  defaultEventType,
+  defaultEquipmentId,
+}: LogRegisterModalProps) {
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -37,6 +45,8 @@ export default function LogRegisterModal({ isOpen, onClose, onSave }: LogRegiste
     if (!isOpen) return;
     setError("");
     setSelectedFiles([]);
+    if (defaultEventType) setEventType(defaultEventType);
+    if (defaultEquipmentId) setEquipmentId(String(defaultEquipmentId));
     async function fetchEquipments() {
       try {
         const res = await fetch("/api/equipment");

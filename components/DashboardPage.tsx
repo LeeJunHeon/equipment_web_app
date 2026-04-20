@@ -2,15 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { Package, AlertTriangle, Wind, Sparkles } from "lucide-react";
-import type { PageId, Equipment, EquipmentLog } from "@/lib/types";
+import type { Equipment, EquipmentLog } from "@/lib/types";
 
 interface DashboardPageProps {
-  onNavigate: (page: PageId) => void;
+  onNavigateEquipment: (equipment: Equipment) => void;
   onDetailClick: (logId: number) => void;
   refreshKey: number;
 }
 
-export default function DashboardPage({ onNavigate, onDetailClick, refreshKey }: DashboardPageProps) {
+export default function DashboardPage({ onNavigateEquipment, onDetailClick, refreshKey }: DashboardPageProps) {
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [logs, setLogs] = useState<EquipmentLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,7 +45,7 @@ export default function DashboardPage({ onNavigate, onDetailClick, refreshKey }:
 
   const stats = [
     { label: "전체 장비", value: equipments.length, iconBg: "bg-blue-100", icon: <Package size={18} className="text-blue-600" /> },
-    { label: "미해결 수리", value: unresolvedRepairs.length, iconBg: "bg-red-100", icon: <AlertTriangle size={18} className="text-red-600" />, onClick: () => onNavigate("repair") },
+    { label: "미해결 수리", value: unresolvedRepairs.length, iconBg: "bg-red-100", icon: <AlertTriangle size={18} className="text-red-600" /> },
     { label: "이번 달 Vent", value: ventCount, iconBg: "bg-yellow-100", icon: <Wind size={18} className="text-yellow-600" /> },
     { label: "이번 달 클리닝", value: cleaningCount, iconBg: "bg-green-100", icon: <Sparkles size={18} className="text-green-600" /> },
   ];
@@ -117,7 +117,7 @@ export default function DashboardPage({ onNavigate, onDetailClick, refreshKey }:
                   <p>마지막 클리닝: {getLastDate(eq.id, "cleaning")}</p>
                 </div>
                 <button
-                  onClick={() => onNavigate("log")}
+                  onClick={() => onNavigateEquipment(eq)}
                   className="mt-2 text-[11px] font-medium text-blue-600 hover:text-blue-800"
                 >
                   이력 보기 →
