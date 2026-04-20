@@ -1,69 +1,62 @@
 "use client";
 
-import { useState } from "react";
-import {
-  Home, ClipboardList, Wrench,
-  Wind, Trash2, Monitor, X, LogOut
-} from "lucide-react";
+import { useState, useEffect } from "react";
+import { Home, Wrench, X, LogOut, Settings, ChevronRight } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
-import type { PageId, EquipmentLog } from "@/lib/types";
+import type { Equipment } from "@/lib/types";
 
 interface SidebarProps {
-  currentPage: PageId;
-  onNavigate: (page: PageId) => void;
-  onEquipmentClick: () => void;
+  currentPage: "dashboard" | "equipment";
+  selectedEquipmentId: number | null;
+  onNavigateDashboard: () => void;
+  onNavigateEquipment: (equipment: Equipment) => void;
+  onEquipmentSettingClick: () => void;
   isOpen: boolean;
   onClose: () => void;
-  logs: EquipmentLog[];
 }
 
 export default function Sidebar({
   currentPage,
-  onNavigate,
-  onEquipmentClick,
+  selectedEquipmentId,
+  onNavigateDashboard,
+  onNavigateEquipment,
+  onEquipmentSettingClick,
   isOpen,
   onClose,
-  logs,
 }: SidebarProps) {
   const { data: session } = useSession();
-  const userName = session?.user?.name ?? "사용자";
+  const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  const unresolvedRepairCount = logs.filter(
-    (l) => l.eventType === "repair" && l.status === "처리중"
-  ).length;
+  const userName = session?.user?.name ?? "사용자";
+  const initial = (() => {
+    if (!userName || userName === "사용자") return "?";
+    const parts = userName.trim().split(" ").filter((p) => p.length > 0);
+    const target = parts.length > 1 ? parts[parts.length - 1] : parts[0];
+    return target.charAt(0).toUpperCase();
+  })();
 
-  const navSections = [
-    {
-      label: "메인",
-      items: [
-        { id: "dashboard" as PageId, label: "대시보드", icon: Home },
-        { id: "log" as PageId, label: "전체 이력", icon: ClipboardList, badge: unresolvedRepairCount },
-      ],
-    },
-    {
-      label: "이력",
-      items: [
-        { id: "repair" as PageId, label: "수리", icon: Wrench, badge: unresolvedRepairCount },
-        { id: "vent" as PageId, label: "Vent", icon: Wind },
-        { id: "cleaning" as PageId, label: "클리닝", icon: Trash2 },
-      ],
-    },
-  ];
+  useEffect(() => {
+    fetch("/api/equipment")
+      .then((r) => (r.ok ? r.json() : []))
+      .then(setEquipments)
+      .catch(() => setEquipments([]));
+  }, []);
 
-  const handleNav = (page: PageId) => {
-    onNavigate(page);
+  const totalUnresolved = equipments.reduce(
+    (sum, eq) => sum + eq.unresolvedRepairCount,
+    0
+  );
+
+  const handleNav = (fn: () => void) => {
+    fn();
     if (window.innerWidth < 1024) onClose();
   };
 
   return (
     <>
-      {/* 모바일 오버레이 */}
       {isOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
-          onClick={onClose}
-        />
+        <div className="fixed inset-0 z-40 bg-black/40 lg:hidden" onClick={onClose} />
       )}
 
       <aside
@@ -89,76 +82,92 @@ export default function Sidebar({
                 <p className="text-[10px] text-gray-400">Equipment Manager</p>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-lg hover:bg-gray-100 lg:hidden"
-            >
+            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 lg:hidden">
               <X size={18} className="text-gray-400" />
             </button>
           </div>
         </div>
 
         {/* 네비게이션 */}
-        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-          {navSections.map((section) => (
-            <div key={section.label} className="mb-2">
-              <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-                {section.label}
-              </p>
-              {section.items.map((item) => {
-                const Icon = item.icon;
-                const active = currentPage === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => handleNav(item.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
-                      active
-                        ? "bg-blue-50 text-blue-600 font-semibold"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                    }`}
-                  >
-                    <Icon size={18} />
-                    <span className="flex-1 text-left">{item.label}</span>
-                    {item.badge ? (
-                      <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-                        {item.badge}
-                      </span>
-                    ) : null}
-                  </button>
-                );
-              })}
-            </div>
-          ))}
+        <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-0.5">
+          {/* 대시보드 */}
+          <button
+            onClick={() => handleNav(onNavigateDashboard)}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
+              currentPage === "dashboard"
+                ? "bg-blue-50 text-blue-600 font-semibold"
+                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+            }`}
+          >
+            <Home size={18} />
+            <span className="flex-1 text-left">대시보드</span>
+            {totalUnresolved > 0 && currentPage !== "dashboard" && (
+              <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                {totalUnresolved}
+              </span>
+            )}
+          </button>
+
+          {/* 장비 섹션 */}
+          <div className="mt-2">
+            <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+              장비
+            </p>
+            {equipments.length === 0 && (
+              <div className="space-y-1 px-1">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-10 bg-gray-100 rounded-xl animate-pulse" />
+                ))}
+              </div>
+            )}
+            {equipments.map((eq) => {
+              const isActive =
+                currentPage === "equipment" && selectedEquipmentId === eq.id;
+              return (
+                <button
+                  key={eq.id}
+                  onClick={() => handleNav(() => onNavigateEquipment(eq))}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
+                    isActive
+                      ? "bg-blue-50 text-blue-600 font-semibold"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
+                >
+                  <ChevronRight
+                    size={15}
+                    className={isActive ? "text-blue-500" : "text-gray-300"}
+                  />
+                  <span className="flex-1 text-left truncate">{eq.name}</span>
+                  {eq.unresolvedRepairCount > 0 && (
+                    <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                      {eq.unresolvedRepairCount}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
 
           {/* 관리자 섹션 */}
-          <div className="mb-2">
+          <div className="mt-2">
             <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
               관리자
             </p>
             <button
-              onClick={() => {
-                onEquipmentClick();
-                if (window.innerWidth < 1024) onClose();
-              }}
+              onClick={() => handleNav(onEquipmentSettingClick)}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-600 transition-all hover:bg-gray-50 hover:text-gray-900"
             >
-              <Monitor size={18} className="text-gray-400" />
-              <span>장비 목록</span>
+              <Settings size={18} className="text-gray-400" />
+              <span>장비 설정</span>
             </button>
           </div>
         </nav>
 
-        {/* 사용자 정보 + 로그아웃 */}
+        {/* 사용자 정보 */}
         <div className="px-3 py-4 border-t border-gray-100">
           <div className="flex items-center gap-3 px-3 py-2">
             <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600 shrink-0">
-              {(() => {
-                if (!userName || userName === "사용자") return "?";
-                const parts = userName.trim().split(" ").filter(p => p.length > 0);
-                const target = parts.length > 1 ? parts[parts.length - 1] : parts[0];
-                return target.charAt(0).toUpperCase();
-              })()}
+              {initial}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-gray-900 truncate">{userName}</p>
