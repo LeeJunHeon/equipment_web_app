@@ -1,6 +1,7 @@
 "use client";
 
 import { LayoutDashboard, ClipboardList, Wrench, Wind, Trash2, Monitor, X, Menu } from "lucide-react";
+import { useSession, signOut } from "next-auth/react";
 import type { PageId, EquipmentLog } from "@/lib/types";
 
 interface SidebarProps {
@@ -13,6 +14,11 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ currentPage, onNavigate, onEquipmentClick, isOpen, onToggle, logs }: SidebarProps) {
+  const { data: session, status } = useSession();
+  const userName = session?.user?.name ?? "사용자";
+  const initial = session?.user?.name?.[0] ?? "?";
+  const isLoading = status === "loading";
+
   const unresolvedRepairCount = logs.filter(
     (l) => l.eventType === "repair" && l.status === "처리중"
   ).length;
@@ -117,13 +123,24 @@ export default function Sidebar({ currentPage, onNavigate, onEquipmentClick, isO
 
         <div className="border-t border-gray-100 px-4 py-3">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-[11px] font-bold text-blue-700">
-              이
+            <div
+              className="flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold text-white"
+              style={{ backgroundColor: isLoading ? "#d1d5db" : "#3b82f6" }}
+            >
+              {isLoading ? "" : initial}
             </div>
-            <div className="flex flex-col">
-              <span className="text-[12px] font-medium text-gray-800">이준헌</span>
+            <div className="flex flex-col min-w-0 flex-1">
+              <span className="text-[12px] font-medium text-gray-800 truncate">
+                {isLoading ? "..." : userName}
+              </span>
               <span className="text-[10px] text-gray-400">관리자</span>
             </div>
+            <button
+              onClick={() => signOut({ callbackUrl: "https://vanam.synology.me/login" })}
+              className="text-[10px] text-red-400 hover:text-red-600 transition-colors flex-shrink-0"
+            >
+              로그아웃
+            </button>
           </div>
         </div>
       </aside>
