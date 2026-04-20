@@ -155,8 +155,9 @@ export default function Sidebar({
             <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600 shrink-0">
               {(() => {
                 if (!userName || userName === "사용자") return "?";
-                const parts = userName.trim().split(" ");
-                return parts[0].charAt(0).toUpperCase();
+                const parts = userName.trim().split(" ").filter(p => p.length > 0);
+                const target = parts.length > 1 ? parts[parts.length - 1] : parts[0];
+                return target.charAt(0).toUpperCase();
               })()}
             </div>
             <div className="flex-1 min-w-0">
