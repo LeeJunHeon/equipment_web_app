@@ -81,8 +81,7 @@ export default function DashboardPage({ onNavigateEquipment, onDetailClick, refr
         {stats.map((s) => (
           <div
             key={s.label}
-            onClick={s.onClick}
-            className={`flex items-center gap-3 rounded-xl border border-gray-100 bg-white p-4 shadow-sm ${s.onClick ? "cursor-pointer hover:shadow-md" : ""}`}
+            className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white p-4 shadow-sm"
           >
             <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${s.iconBg}`}>{s.icon}</div>
             <div>

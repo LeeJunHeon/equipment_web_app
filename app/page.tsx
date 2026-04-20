@@ -1,21 +1,23 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { PageId, EquipmentLog } from "@/lib/types";
+import type { Equipment, EquipmentLog } from "@/lib/types";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
 import DashboardPage from "@/components/DashboardPage";
-import LogPage from "@/components/LogPage";
-import RepairPage from "@/components/RepairPage";
-import VentPage from "@/components/VentPage";
-import CleaningPage from "@/components/CleaningPage";
+import EquipmentDetailPage from "@/components/EquipmentDetailPage";
 import LogRegisterModal from "@/components/modals/LogRegisterModal";
 import LogDetailModal from "@/components/modals/LogDetailModal";
 import EquipmentModal from "@/components/modals/EquipmentModal";
 
 export default function Home() {
-  const [currentPage, setCurrentPage] = useState<PageId>("dashboard");
+  const [currentPage, setCurrentPage] = useState<"dashboard" | "equipment">("dashboard");
+  const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
+
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [registerDefaultType, setRegisterDefaultType] = useState<"repair" | "vent" | "cleaning">("repair");
+  const [registerDefaultEquipmentId, setRegisterDefaultEquipmentId] = useState<number | undefined>(undefined);
+
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showEquipmentModal, setShowEquipmentModal] = useState(false);
   const [selectedLogId, setSelectedLogId] = useState<number | null>(null);
@@ -23,7 +25,6 @@ export default function Home() {
   const [logs, setLogs] = useState<EquipmentLog[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // 재고관리 앱과 동일: 1024px(lg) 미만이면 사이드바 닫힘
   useEffect(() => {
     if (window.innerWidth < 1024) setSidebarOpen(false);
   }, []);
@@ -31,12 +32,8 @@ export default function Home() {
   const fetchLogs = useCallback(async () => {
     try {
       const res = await fetch("/api/logs");
-      if (res.ok) {
-        const data = await res.json();
-        setLogs(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch logs:", error);
+      if (res.ok) setLogs(await res.json());
+    } catch {
       setLogs([]);
     }
   }, []);
@@ -54,55 +51,58 @@ export default function Home() {
     setRefreshKey((k) => k + 1);
   }
 
+  function openRegisterModal(type: "repair" | "vent" | "cleaning", equipment: Equipment) {
+    setRegisterDefaultType(type);
+    setRegisterDefaultEquipmentId(equipment.id);
+    setShowRegisterModal(true);
+  }
+
+  const unresolvedCount = logs.filter(
+    (l) => l.eventType === "repair" && l.status === "처리중"
+  ).length;
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar
         currentPage={currentPage}
-        onNavigate={setCurrentPage}
-        onEquipmentClick={() => setShowEquipmentModal(true)}
+        selectedEquipmentId={selectedEquipment?.id ?? null}
+        onNavigateDashboard={() => {
+          setCurrentPage("dashboard");
+          setSelectedEquipment(null);
+        }}
+        onNavigateEquipment={(eq) => {
+          setCurrentPage("equipment");
+          setSelectedEquipment(eq);
+        }}
+        onEquipmentSettingClick={() => setShowEquipmentModal(true)}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        logs={logs}
       />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header
           currentPage={currentPage}
+          equipmentName={selectedEquipment?.name}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          unresolvedCount={logs.filter(l => l.eventType === "repair" && l.status === "처리중").length}
+          unresolvedCount={unresolvedCount}
         />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           {currentPage === "dashboard" && (
             <DashboardPage
-              onNavigate={setCurrentPage}
+              onNavigateEquipment={(eq) => {
+                setCurrentPage("equipment");
+                setSelectedEquipment(eq);
+              }}
               onDetailClick={handleDetailClick}
               refreshKey={refreshKey}
             />
           )}
-          {currentPage === "log" && (
-            <LogPage
+          {currentPage === "equipment" && selectedEquipment && (
+            <EquipmentDetailPage
+              equipment={selectedEquipment}
+              onRegisterRepair={() => openRegisterModal("repair", selectedEquipment)}
+              onRegisterVent={() => openRegisterModal("vent", selectedEquipment)}
+              onRegisterCleaning={() => openRegisterModal("cleaning", selectedEquipment)}
               onDetailClick={handleDetailClick}
-              onRegisterClick={() => setShowRegisterModal(true)}
-              refreshKey={refreshKey}
-            />
-          )}
-          {currentPage === "repair" && (
-            <RepairPage
-              onDetailClick={handleDetailClick}
-              onRegisterClick={() => setShowRegisterModal(true)}
-              refreshKey={refreshKey}
-            />
-          )}
-          {currentPage === "vent" && (
-            <VentPage
-              onDetailClick={handleDetailClick}
-              onRegisterClick={() => setShowRegisterModal(true)}
-              refreshKey={refreshKey}
-            />
-          )}
-          {currentPage === "cleaning" && (
-            <CleaningPage
-              onDetailClick={handleDetailClick}
-              onRegisterClick={() => setShowRegisterModal(true)}
               refreshKey={refreshKey}
             />
           )}
@@ -113,11 +113,13 @@ export default function Home() {
         isOpen={showRegisterModal}
         onClose={() => setShowRegisterModal(false)}
         onSave={handleRefresh}
+        defaultEventType={registerDefaultType}
+        defaultEquipmentId={registerDefaultEquipmentId}
       />
       <LogDetailModal
         isOpen={showDetailModal}
         onClose={() => setShowDetailModal(false)}
-        onSave={() => setRefreshKey((k) => k + 1)}
+        onSave={handleRefresh}
         logId={selectedLogId}
         logs={logs}
       />
