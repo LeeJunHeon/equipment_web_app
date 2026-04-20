@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Wrench, Wind, Sparkles, Plus, ChevronDown, ChevronRight, ImageIcon } from "lucide-react";
 import type { Equipment, EquipmentLog, LogEntry } from "@/lib/types";
 import RepairEntryModal from "@/components/modals/RepairEntryModal";
+import { getPmStatus, getPmStatusLabel, getPmStatusColor, PM_CONFIG } from "@/lib/pmConfig";
 
 type Tab = "repair" | "maintenance";
 
@@ -378,28 +379,52 @@ export default function EquipmentDetailPage({
                 <Wind size={14} className="text-blue-500" />
                 <span className="text-[11px] font-semibold text-gray-600">마지막 Vent</span>
               </div>
-              {lastVent ? (
-                <>
-                  <p className="text-[13px] font-bold text-gray-900">{lastVent.occurredAt.split("T")[0]}</p>
-                  <p className="text-[11px] text-gray-400">{daysSince(lastVent.occurredAt)}일 전</p>
-                </>
-              ) : (
-                <p className="text-[12px] text-gray-400">기록 없음</p>
-              )}
+              {(() => {
+                const ventStatus = getPmStatus(lastVent?.occurredAt, PM_CONFIG.ventIntervalDays);
+                const color = getPmStatusColor(ventStatus);
+                return lastVent ? (
+                  <>
+                    <p className="text-[13px] font-bold text-gray-900">{lastVent.occurredAt.split("T")[0]}</p>
+                    <p className="text-[11px] text-gray-400">{daysSince(lastVent.occurredAt)}일 전</p>
+                    <span className={`mt-1 inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full ${color.bg} ${color.text}`}>
+                      {getPmStatusLabel(ventStatus)} (주기 {PM_CONFIG.ventIntervalDays}일)
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[12px] text-gray-400">기록 없음</p>
+                    <span className="mt-1 inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">
+                      주기 초과
+                    </span>
+                  </>
+                );
+              })()}
             </div>
             <div className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
               <div className="flex items-center gap-2 mb-1">
                 <Sparkles size={14} className="text-green-500" />
                 <span className="text-[11px] font-semibold text-gray-600">마지막 클리닝</span>
               </div>
-              {lastCleaning ? (
-                <>
-                  <p className="text-[13px] font-bold text-gray-900">{lastCleaning.occurredAt.split("T")[0]}</p>
-                  <p className="text-[11px] text-gray-400">{daysSince(lastCleaning.occurredAt)}일 전</p>
-                </>
-              ) : (
-                <p className="text-[12px] text-gray-400">기록 없음</p>
-              )}
+              {(() => {
+                const cleaningStatus = getPmStatus(lastCleaning?.occurredAt, PM_CONFIG.cleaningIntervalDays);
+                const color = getPmStatusColor(cleaningStatus);
+                return lastCleaning ? (
+                  <>
+                    <p className="text-[13px] font-bold text-gray-900">{lastCleaning.occurredAt.split("T")[0]}</p>
+                    <p className="text-[11px] text-gray-400">{daysSince(lastCleaning.occurredAt)}일 전</p>
+                    <span className={`mt-1 inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full ${color.bg} ${color.text}`}>
+                      {getPmStatusLabel(cleaningStatus)} (주기 {PM_CONFIG.cleaningIntervalDays}일)
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[12px] text-gray-400">기록 없음</p>
+                    <span className="mt-1 inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">
+                      주기 초과
+                    </span>
+                  </>
+                );
+              })()}
             </div>
           </div>
 

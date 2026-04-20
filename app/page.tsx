@@ -24,6 +24,7 @@ export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [logs, setLogs] = useState<EquipmentLog[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [pmIssueCount, setPmIssueCount] = useState(0);
 
   useEffect(() => {
     if (window.innerWidth < 1024) setSidebarOpen(false);
@@ -38,9 +39,22 @@ export default function Home() {
     }
   }, []);
 
+  const fetchDashboard = useCallback(async () => {
+    try {
+      const res = await fetch("/api/dashboard");
+      if (res.ok) {
+        const d = await res.json();
+        setPmIssueCount(d.pmIssueCount ?? 0);
+      }
+    } catch {
+      setPmIssueCount(0);
+    }
+  }, []);
+
   useEffect(() => {
     fetchLogs();
-  }, [fetchLogs, refreshKey]);
+    fetchDashboard();
+  }, [fetchLogs, fetchDashboard, refreshKey]);
 
   function handleDetailClick(logId: number) {
     setSelectedLogId(logId);
@@ -84,6 +98,7 @@ export default function Home() {
           equipmentName={selectedEquipment?.name}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           unresolvedCount={unresolvedCount}
+          pmIssueCount={pmIssueCount}
         />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           {currentPage === "dashboard" && (

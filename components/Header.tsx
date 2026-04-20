@@ -8,6 +8,7 @@ interface HeaderProps {
   equipmentName?: string;
   onToggleSidebar: () => void;
   unresolvedCount: number;
+  pmIssueCount?: number;
 }
 
 export default function Header({
@@ -15,6 +16,7 @@ export default function Header({
   equipmentName,
   onToggleSidebar,
   unresolvedCount,
+  pmIssueCount = 0,
 }: HeaderProps) {
   const [showNotif, setShowNotif] = useState(false);
 
@@ -39,9 +41,9 @@ export default function Header({
           className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative"
         >
           <Bell size={18} className="text-gray-500" />
-          {unresolvedCount > 0 && (
+          {(unresolvedCount + pmIssueCount) > 0 && (
             <span className="absolute top-1 right-1 min-w-[16px] h-4 bg-rose-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white px-1">
-              {unresolvedCount}
+              {unresolvedCount + pmIssueCount}
             </span>
           )}
         </button>
@@ -67,9 +69,19 @@ export default function Header({
                   </p>
                   <p className="text-xs text-gray-400 mt-1">각 장비 페이지에서 확인하세요.</p>
                 </div>
-              ) : (
+              ) : pmIssueCount === 0 ? (
                 <div className="px-4 py-4">
                   <p className="text-sm text-gray-400 text-center">새로운 알림이 없습니다</p>
+                </div>
+              ) : null}
+              {pmIssueCount > 0 && (
+                <div className="px-4 py-3 border-t border-gray-50">
+                  <p className="text-sm text-gray-700">
+                    PM 주기가 지난 장비가{" "}
+                    <span className="font-bold text-yellow-500">{pmIssueCount}개</span>{" "}
+                    있습니다.
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">대시보드에서 확인하세요.</p>
                 </div>
               )}
             </div>
