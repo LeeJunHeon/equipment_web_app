@@ -12,6 +12,8 @@ export interface Equipment {
   isActive?: boolean;
   createdAt?: string;
   unresolvedRepairCount: number;
+  ventIntervalDays?: number;
+  cleaningIntervalDays?: number;
 }
 
 export interface PhotoInfo {

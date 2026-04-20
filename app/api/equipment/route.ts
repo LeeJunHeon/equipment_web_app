@@ -23,6 +23,8 @@ export async function GET() {
       isActive: eq.isActive,
       createdAt: eq.createdAt,
       unresolvedRepairCount: eq.logs.length,
+      ventIntervalDays: eq.ventIntervalDays,
+      cleaningIntervalDays: eq.cleaningIntervalDays,
     }));
 
     return NextResponse.json(result);
@@ -47,6 +49,8 @@ export async function POST(request: NextRequest) {
         category: category || null,
         isVentTarget: isVentTarget ?? false,
         description: description || null,
+        ventIntervalDays: body.ventIntervalDays ?? 30,
+        cleaningIntervalDays: body.cleaningIntervalDays ?? 14,
       },
     });
 
@@ -73,6 +77,8 @@ export async function PATCH(request: NextRequest) {
         ...(category !== undefined && { category }),
         ...(isVentTarget !== undefined && { isVentTarget }),
         ...(description !== undefined && { description }),
+        ...(body.ventIntervalDays !== undefined && { ventIntervalDays: body.ventIntervalDays }),
+        ...(body.cleaningIntervalDays !== undefined && { cleaningIntervalDays: body.cleaningIntervalDays }),
       },
     });
 

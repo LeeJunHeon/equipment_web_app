@@ -17,6 +17,8 @@ export default function EquipmentModal({ isOpen, onClose }: EquipmentModalProps)
   const [formName, setFormName] = useState("");
   const [formCategory, setFormCategory] = useState("");
   const [formIsVent, setFormIsVent] = useState(false);
+  const [formVentInterval, setFormVentInterval] = useState(30);
+  const [formCleaningInterval, setFormCleaningInterval] = useState(14);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -43,6 +45,8 @@ export default function EquipmentModal({ isOpen, onClose }: EquipmentModalProps)
     setFormName(eq.name);
     setFormCategory(eq.category || "");
     setFormIsVent(eq.isVentTarget);
+    setFormVentInterval(eq.ventIntervalDays ?? 30);
+    setFormCleaningInterval(eq.cleaningIntervalDays ?? 14);
     setIsAdding(false);
   }
 
@@ -52,6 +56,8 @@ export default function EquipmentModal({ isOpen, onClose }: EquipmentModalProps)
     setFormName("");
     setFormCategory("");
     setFormIsVent(false);
+    setFormVentInterval(30);
+    setFormCleaningInterval(14);
   }
 
   function cancelEdit() {
@@ -60,6 +66,8 @@ export default function EquipmentModal({ isOpen, onClose }: EquipmentModalProps)
     setFormName("");
     setFormCategory("");
     setFormIsVent(false);
+    setFormVentInterval(30);
+    setFormCleaningInterval(14);
   }
 
   async function saveEdit() {
@@ -70,14 +78,14 @@ export default function EquipmentModal({ isOpen, onClose }: EquipmentModalProps)
         const res = await fetch("/api/equipment", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: formName, category: formCategory, isVentTarget: formIsVent }),
+          body: JSON.stringify({ name: formName, category: formCategory, isVentTarget: formIsVent, ventIntervalDays: formVentInterval, cleaningIntervalDays: formCleaningInterval }),
         });
         if (!res.ok) return;
       } else if (editingId !== null) {
         const res = await fetch("/api/equipment", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: editingId, name: formName, category: formCategory, isVentTarget: formIsVent }),
+          body: JSON.stringify({ id: editingId, name: formName, category: formCategory, isVentTarget: formIsVent, ventIntervalDays: formVentInterval, cleaningIntervalDays: formCleaningInterval }),
         });
         if (!res.ok) return;
       }
@@ -131,6 +139,28 @@ export default function EquipmentModal({ isOpen, onClose }: EquipmentModalProps)
                 <input type="checkbox" checked={formIsVent} onChange={(e) => setFormIsVent(e.target.checked)} className="rounded" />
                 Vent 기록 대상
               </label>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="mb-1 block text-[10px] font-semibold text-gray-500">Vent 주기 (일)</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={formVentInterval}
+                    onChange={(e) => setFormVentInterval(Math.max(1, Number(e.target.value)))}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[10px] font-semibold text-gray-500">클리닝 주기 (일)</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={formCleaningInterval}
+                    onChange={(e) => setFormCleaningInterval(Math.max(1, Number(e.target.value)))}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"
+                  />
+                </div>
+              </div>
               <div className="flex justify-end gap-2">
                 <button onClick={cancelEdit} className="rounded px-3 py-1 text-[11px] text-gray-500 hover:bg-gray-100">취소</button>
                 <button onClick={saveEdit} className="rounded bg-blue-600 px-3 py-1 text-[11px] text-white hover:bg-blue-700">저장</button>
@@ -151,6 +181,28 @@ export default function EquipmentModal({ isOpen, onClose }: EquipmentModalProps)
                       <input type="checkbox" checked={formIsVent} onChange={(e) => setFormIsVent(e.target.checked)} className="rounded" />
                       Vent 기록 대상
                     </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="mb-1 block text-[10px] font-semibold text-gray-500">Vent 주기 (일)</label>
+                        <input
+                          type="number"
+                          min={1}
+                          value={formVentInterval}
+                          onChange={(e) => setFormVentInterval(Math.max(1, Number(e.target.value)))}
+                          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-[10px] font-semibold text-gray-500">클리닝 주기 (일)</label>
+                        <input
+                          type="number"
+                          min={1}
+                          value={formCleaningInterval}
+                          onChange={(e) => setFormCleaningInterval(Math.max(1, Number(e.target.value)))}
+                          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"
+                        />
+                      </div>
+                    </div>
                     <div className="flex justify-end gap-2">
                       <button onClick={cancelEdit} className="rounded px-3 py-1 text-[11px] text-gray-500 hover:bg-gray-100">취소</button>
                       <button onClick={saveEdit} className="rounded bg-blue-600 px-3 py-1 text-[11px] text-white hover:bg-blue-700">저장</button>
