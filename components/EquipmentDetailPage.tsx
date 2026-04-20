@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Wrench, Wind, Sparkles, Plus, ChevronDown, ChevronRight, ImageIcon } from "lucide-react";
+import { Wrench, Wind, Sparkles, Plus, ChevronDown, ChevronRight, ImageIcon, Package } from "lucide-react";
 import type { Equipment, EquipmentLog, LogEntry } from "@/lib/types";
 import RepairEntryModal from "@/components/modals/RepairEntryModal";
 import { getPmStatus, getPmStatusLabel, getPmStatusColor, PM_CONFIG } from "@/lib/pmConfig";
@@ -38,6 +38,11 @@ export default function EquipmentDetailPage({
   const [showEntryModal, setShowEntryModal] = useState(false);
   const [entryTargetLogId, setEntryTargetLogId] = useState<number | null>(null);
 
+  const [partsSummary, setPartsSummary] = useState<
+    { name: string; count: number; totalQty: number; lastDate: string }[]
+  >([]);
+  const [partsLoading, setPartsLoading] = useState(false);
+
   const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
@@ -56,6 +61,22 @@ export default function EquipmentDetailPage({
     setExpandedLogIds(new Set());
     setEntriesMap({});
   }, [fetchLogs]);
+
+  const fetchParts = useCallback(async () => {
+    setPartsLoading(true);
+    try {
+      const res = await fetch(`/api/parts-summary?equipmentId=${equipment.id}`);
+      if (res.ok) setPartsSummary(await res.json());
+    } catch {
+      setPartsSummary([]);
+    } finally {
+      setPartsLoading(false);
+    }
+  }, [equipment.id, refreshKey]);
+
+  useEffect(() => {
+    fetchParts();
+  }, [fetchParts]);
 
   // 특정 수리 케이스의 일일 기록 로드
   async function loadEntries(logId: number) {
@@ -365,6 +386,58 @@ export default function EquipmentDetailPage({
           {repairLogs.length === 0 && (
             <div className="py-12 text-center text-gray-400 text-[13px]">
               수리 이력이 없습니다.
+            </div>
+          )}
+
+          {/* 교체 부품 이력 */}
+          {(partsSummary.length > 0 || partsLoading) && (
+            <div className="mt-4">
+              <h3 className="flex items-center gap-2 text-[13px] font-semibold text-gray-700 mb-2">
+                <Package size={14} className="text-gray-400" />
+                교체 부품 이력
+              </h3>
+              {partsLoading ? (
+                <div className="space-y-1.5">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="h-8 bg-gray-100 rounded-lg animate-pulse" />
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                  <table className="w-full text-[12px]">
+                    <thead>
+                      <tr className="border-b border-gray-100 bg-gray-50">
+                        <th className="px-3 py-2 text-left font-semibold text-gray-500">부품명</th>
+                        <th className="px-3 py-2 text-center font-semibold text-gray-500">교체 횟수</th>
+                        <th className="px-3 py-2 text-center font-semibold text-gray-500">총 수량</th>
+                        <th className="px-3 py-2 text-right font-semibold text-gray-500">최근 교체</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {partsSummary.map((p, i) => (
+                        <tr key={i} className="border-b border-gray-50 last:border-0">
+                          <td className="px-3 py-2 font-medium text-gray-800">{p.name}</td>
+                          <td className="px-3 py-2 text-center">
+                            <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              p.count >= 3
+                                ? "bg-red-100 text-red-700"
+                                : p.count >= 2
+                                ? "bg-yellow-100 text-yellow-700"
+                                : "bg-gray-100 text-gray-600"
+                            }`}>
+                              {p.count}회
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 text-center text-gray-600">{p.totalQty}개</td>
+                          <td className="px-3 py-2 text-right text-gray-400">
+                            {p.lastDate.split("T")[0]}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
         </div>
