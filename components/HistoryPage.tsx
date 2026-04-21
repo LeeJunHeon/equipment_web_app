@@ -9,6 +9,7 @@ interface HistoryPageProps {
   eventType: "repair" | "vent" | "cleaning";
   refreshKey: number;
   onRefresh: () => void;
+  isAdmin?: boolean;
 }
 
 const CONFIG = {
@@ -22,7 +23,7 @@ function formatDate(dateStr: string) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
 }
 
-export default function HistoryPage({ eventType, refreshKey, onRefresh }: HistoryPageProps) {
+export default function HistoryPage({ eventType, refreshKey, onRefresh, isAdmin = false }: HistoryPageProps) {
   const [logs, setLogs] = useState<EquipmentLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLogId, setSelectedLogId] = useState<number | null>(null);
@@ -141,6 +142,7 @@ export default function HistoryPage({ eventType, refreshKey, onRefresh }: Histor
         onSave={() => { setSelectedLogId(null); onRefresh(); }}
         logId={selectedLogId}
         logs={logs}
+        isAdmin={isAdmin}
       />
 
       <LogRegisterModal
