@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       equipmentId, eventType, occurredAt, operator, description,
       status,
       symptom, replacedParts, isExternal, vendorName,
-      ventReason, finalPressure, pumpedDownAt,
+      ventReason,
       cleaningType, nextScheduledAt,
     } = body;
 
@@ -66,8 +66,6 @@ export async function POST(request: NextRequest) {
         isExternal: isExternal ?? false,
         vendorName: vendorName || null,
         ventReason: ventReason || null,
-        finalPressure: finalPressure || null,
-        pumpedDownAt: pumpedDownAt ? new Date(pumpedDownAt) : null,
         cleaningType: cleaningType || null,
         nextScheduledAt: nextScheduledAt ? new Date(nextScheduledAt) : null,
       },
@@ -106,8 +104,6 @@ export async function PATCH(request: NextRequest) {
     if (updateData.isExternal !== undefined) data.isExternal = updateData.isExternal;
     if (updateData.vendorName !== undefined) data.vendorName = updateData.vendorName;
     if (updateData.ventReason !== undefined) data.ventReason = updateData.ventReason;
-    if (updateData.finalPressure !== undefined) data.finalPressure = updateData.finalPressure;
-    if (updateData.pumpedDownAt !== undefined) data.pumpedDownAt = updateData.pumpedDownAt ? new Date(updateData.pumpedDownAt) : null;
     if (updateData.cleaningType !== undefined) data.cleaningType = updateData.cleaningType;
     if (updateData.nextScheduledAt !== undefined) data.nextScheduledAt = updateData.nextScheduledAt ? new Date(updateData.nextScheduledAt) : null;
 

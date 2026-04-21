@@ -39,8 +39,6 @@ export default function LogRegisterModal({
   const [vendorName, setVendorName] = useState("");
   const [repairStatus, setRepairStatus] = useState<StatusType>("처리중");
   const [ventReason, setVentReason] = useState("타겟 교체");
-  const [finalPressure, setFinalPressure] = useState("");
-  const [pumpedDownAt, setPumpedDownAt] = useState("");
   const [cleaningType, setCleaningType] = useState("정기 클리닝");
   const [nextScheduledAt, setNextScheduledAt] = useState("");
 
@@ -67,8 +65,6 @@ export default function LogRegisterModal({
       setVendorName("");
       setRepairStatus("처리중");
       setVentReason("타겟 교체");
-      setFinalPressure("");
-      setPumpedDownAt("");
       setCleaningType("정기 클리닝");
       setNextScheduledAt("");
       setSelectedFiles([]);
@@ -149,8 +145,6 @@ export default function LogRegisterModal({
       }
       if (eventType === "vent") {
         body.ventReason = ventReason || null;
-        body.finalPressure = finalPressure || null;
-        body.pumpedDownAt = pumpedDownAt || null;
       }
       if (eventType === "cleaning") {
         body.cleaningType = cleaningType || null;
@@ -396,8 +390,6 @@ export default function LogRegisterModal({
                   </div>
                 )}
               </div>
-              <div><label className="mb-1 block text-[11px] text-gray-500">도달 압력</label><input type="text" value={finalPressure} onChange={(e) => setFinalPressure(e.target.value)} placeholder="예: 3.2e-6 Torr" className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400" /></div>
-              <div><label className="mb-1 block text-[11px] text-gray-500">Pump-down 완료 시각</label><input type="datetime-local" value={pumpedDownAt} onChange={(e) => setPumpedDownAt(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400" /></div>
             </div>
           )}
 
