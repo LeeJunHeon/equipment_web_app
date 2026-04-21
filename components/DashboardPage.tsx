@@ -255,7 +255,7 @@ export default function DashboardPage({
                       <div className="flex items-center gap-1 text-gray-500">
                         <Wind size={11} />
                         <span>
-                          {`Vent · ${eq.lastVentDate ? `${daysSince(eq.lastVentDate)}일 전` : "기록 없음"} (${eq.ventIntervalDays}일 주기)`}
+                          {`Vent · ${eq.lastVentDate ? `${daysSince(eq.lastVentDate)}일 전` : "기록 없음"} (${eq.ventIntervalDays === 0 ? "주기 없음" : `${eq.ventIntervalDays}일 주기`})`}
                         </span>
                       </div>
                       <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${ventColor.bg} ${ventColor.text}`}>
@@ -268,7 +268,7 @@ export default function DashboardPage({
                       <div className="flex items-center gap-1 text-gray-500">
                         <Sparkles size={11} />
                         <span>
-                          {`클리닝 · ${eq.lastCleaningDate ? `${daysSince(eq.lastCleaningDate)}일 전` : "기록 없음"} (${eq.cleaningIntervalDays}일 주기)`}
+                          {`클리닝 · ${eq.lastCleaningDate ? `${daysSince(eq.lastCleaningDate)}일 전` : "기록 없음"} (${eq.cleaningIntervalDays === 0 ? "주기 없음" : `${eq.cleaningIntervalDays}일 주기`})`}
                         </span>
                       </div>
                       <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${cleaningColor.bg} ${cleaningColor.text}`}>
@@ -306,37 +306,32 @@ export default function DashboardPage({
                 </div>
 
                 {/* 빠른 이력 등록 */}
-                <div className="flex gap-1.5 border-t border-gray-50 pt-2">
+                <div className="grid grid-cols-3 gap-1.5 border-t border-gray-50 pt-2">
                   <button
-                    className="flex-1 rounded-lg border border-gray-200 py-2.5 text-[11px] font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onRegisterLog("repair", eq as unknown as Equipment);
-                    }}
+                    className="rounded-lg border border-gray-200 py-2.5 text-[11px] font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                    onClick={(e) => { e.stopPropagation(); onRegisterLog("repair", eq as unknown as Equipment); }}
                   >
                     수리 등록
                   </button>
-                  {eq.isVentTarget && (
+                  {eq.isVentTarget ? (
                     <button
-                      className="flex-1 rounded-lg border border-gray-200 py-2.5 text-[11px] font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onRegisterLog("vent", eq as unknown as Equipment);
-                      }}
+                      className="rounded-lg border border-gray-200 py-2.5 text-[11px] font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                      onClick={(e) => { e.stopPropagation(); onRegisterLog("vent", eq as unknown as Equipment); }}
                     >
                       Vent
                     </button>
+                  ) : (
+                    <div />
                   )}
-                  {eq.isCleaningTarget !== false && (
+                  {eq.isCleaningTarget !== false ? (
                     <button
-                      className="flex-1 rounded-lg border border-gray-200 py-2.5 text-[11px] font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onRegisterLog("cleaning", eq as unknown as Equipment);
-                      }}
+                      className="rounded-lg border border-gray-200 py-2.5 text-[11px] font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                      onClick={(e) => { e.stopPropagation(); onRegisterLog("cleaning", eq as unknown as Equipment); }}
                     >
                       클리닝
                     </button>
+                  ) : (
+                    <div />
                   )}
                 </div>
               </div>
