@@ -7,11 +7,12 @@ import Header from "@/components/Header";
 import DashboardPage from "@/components/DashboardPage";
 import EquipmentDetailPage from "@/components/EquipmentDetailPage";
 import EquipmentSettingsPage from "@/components/EquipmentSettingsPage";
+import HistoryPage from "@/components/HistoryPage";
 import LogRegisterModal from "@/components/modals/LogRegisterModal";
 import LogDetailModal from "@/components/modals/LogDetailModal";
 
 export default function Home() {
-  const [currentPage, setCurrentPage] = useState<"dashboard" | "equipment" | "equipment-settings">("dashboard");
+  const [currentPage, setCurrentPage] = useState<"dashboard" | "equipment" | "equipment-settings" | "history-repair" | "history-vent" | "history-cleaning">("dashboard");
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
 
   const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -88,6 +89,7 @@ export default function Home() {
           setSelectedEquipment(eq);
         }}
         onEquipmentSettingClick={() => { setCurrentPage("equipment-settings"); setSelectedEquipment(null); }}
+        onNavigateHistory={(type) => { setCurrentPage(`history-${type}` as "history-repair" | "history-vent" | "history-cleaning"); setSelectedEquipment(null); }}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
@@ -123,6 +125,13 @@ export default function Home() {
           )}
           {currentPage === "equipment-settings" && (
             <EquipmentSettingsPage />
+          )}
+          {(currentPage === "history-repair" || currentPage === "history-vent" || currentPage === "history-cleaning") && (
+            <HistoryPage
+              eventType={currentPage.replace("history-", "") as "repair" | "vent" | "cleaning"}
+              refreshKey={refreshKey}
+              onRefresh={handleRefresh}
+            />
           )}
         </main>
       </div>

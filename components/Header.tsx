@@ -4,7 +4,7 @@ import { Menu, Bell } from "lucide-react";
 import { useState } from "react";
 
 interface HeaderProps {
-  currentPage: "dashboard" | "equipment" | "equipment-settings";
+  currentPage: "dashboard" | "equipment" | "equipment-settings" | "history-repair" | "history-vent" | "history-cleaning";
   equipmentName?: string;
   onToggleSidebar: () => void;
   unresolvedCount: number;
@@ -25,6 +25,12 @@ export default function Header({
       ? "대시보드"
       : currentPage === "equipment-settings"
       ? "장비 설정"
+      : currentPage === "history-repair"
+      ? "수리 이력"
+      : currentPage === "history-vent"
+      ? "Vent 이력"
+      : currentPage === "history-cleaning"
+      ? "클리닝 이력"
       : (equipmentName ?? "장비 상세");
 
   return (

@@ -1,16 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Home, Wrench, X, LogOut, Settings } from "lucide-react";
+import { Home, Wrench, X, LogOut, Settings, ChevronDown, ChevronRight, FileText, Wind, Sparkles } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import type { Equipment } from "@/lib/types";
 
 interface SidebarProps {
-  currentPage: "dashboard" | "equipment" | "equipment-settings";
+  currentPage: "dashboard" | "equipment" | "equipment-settings" | "history-repair" | "history-vent" | "history-cleaning";
   selectedEquipmentId: number | null;
   onNavigateDashboard: () => void;
   onNavigateEquipment: (equipment: Equipment) => void;
   onEquipmentSettingClick: () => void;
+  onNavigateHistory: (type: "repair" | "vent" | "cleaning") => void;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -21,6 +22,7 @@ export default function Sidebar({
   onNavigateDashboard,
   onNavigateEquipment,
   onEquipmentSettingClick,
+  onNavigateHistory,
   isOpen,
   onClose,
 }: SidebarProps) {
@@ -28,6 +30,12 @@ export default function Sidebar({
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [equipmentsLoaded, setEquipmentsLoaded] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(
+    currentPage === "history-repair" || currentPage === "history-vent" || currentPage === "history-cleaning"
+  );
+  const [equipmentOpen, setEquipmentOpen] = useState(
+    currentPage === "equipment"
+  );
 
   const userName = session?.user?.name ?? "사용자";
   const initial = (() => {
@@ -115,52 +123,112 @@ export default function Sidebar({
             )}
           </button>
 
-          {/* 장비 섹션 */}
-          <div className="mt-2">
-            <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-              장비
-            </p>
-            {!equipmentsLoaded && (
-              <div className="space-y-1 px-1">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-10 bg-gray-100 rounded-xl animate-pulse" />
-                ))}
-              </div>
-            )}
-            {equipmentsLoaded && equipments.length === 0 && (
-              <div className="px-3 py-2 text-[11px] text-gray-400">
-                등록된 장비가 없습니다.
-              </div>
-            )}
-            {equipments.map((eq) => {
-              const isActive =
-                currentPage === "equipment" && selectedEquipmentId === eq.id;
-              return (
+          {/* 이력 조회 아코디언 */}
+          <div className="mt-1">
+            <button
+              onClick={() => setHistoryOpen((v) => !v)}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+            >
+              <FileText size={18} className="text-gray-400" />
+              <span className="flex-1 text-left">이력 조회</span>
+              {historyOpen ? <ChevronDown size={15} className="text-gray-400" /> : <ChevronRight size={15} className="text-gray-400" />}
+            </button>
+            {historyOpen && (
+              <div className="ml-4 pl-3 border-l border-gray-100 space-y-0.5 mt-0.5">
                 <button
-                  key={eq.id}
-                  onClick={() => handleNav(() => onNavigateEquipment(eq))}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
-                    isActive
+                  onClick={() => handleNav(() => onNavigateHistory("repair"))}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] transition-all ${
+                    currentPage === "history-repair"
                       ? "bg-blue-50 text-blue-600 font-semibold"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                      : "text-gray-600 hover:bg-gray-50"
                   }`}
                 >
-<span className="flex-1 text-left truncate">{eq.name}</span>
-                  {eq.unresolvedRepairCount > 0 && (
-                    <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-                      {eq.unresolvedRepairCount}
-                    </span>
-                  )}
+                  <Wrench size={14} className="text-red-400" />
+                  수리 이력
                 </button>
-              );
-            })}
+                <button
+                  onClick={() => handleNav(() => onNavigateHistory("vent"))}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] transition-all ${
+                    currentPage === "history-vent"
+                      ? "bg-blue-50 text-blue-600 font-semibold"
+                      : "text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  <Wind size={14} className="text-blue-400" />
+                  Vent 이력
+                </button>
+                <button
+                  onClick={() => handleNav(() => onNavigateHistory("cleaning"))}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] transition-all ${
+                    currentPage === "history-cleaning"
+                      ? "bg-blue-50 text-blue-600 font-semibold"
+                      : "text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  <Sparkles size={14} className="text-green-400" />
+                  클리닝 이력
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* 관리자 섹션 */}
-          <div className="mt-2">
-            <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+          {/* 장비 아코디언 */}
+          <div className="mt-1">
+            <button
+              onClick={() => setEquipmentOpen((v) => !v)}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+            >
+              <Wrench size={18} className="text-gray-400" />
+              <span className="flex-1 text-left">장비</span>
+              <div className="flex items-center gap-1.5">
+                {totalUnresolved > 0 && !equipmentOpen && (
+                  <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                    {totalUnresolved}
+                  </span>
+                )}
+                {equipmentOpen ? <ChevronDown size={15} className="text-gray-400" /> : <ChevronRight size={15} className="text-gray-400" />}
+              </div>
+            </button>
+            {equipmentOpen && (
+              <div className="ml-4 pl-3 border-l border-gray-100 space-y-0.5 mt-0.5">
+                {!equipmentsLoaded && (
+                  <div className="space-y-1 px-1">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="h-8 bg-gray-100 rounded-xl animate-pulse" />
+                    ))}
+                  </div>
+                )}
+                {equipmentsLoaded && equipments.length === 0 && (
+                  <div className="px-3 py-2 text-[11px] text-gray-400">등록된 장비가 없습니다.</div>
+                )}
+                {equipments.map((eq) => {
+                  const isActive = currentPage === "equipment" && selectedEquipmentId === eq.id;
+                  return (
+                    <button
+                      key={eq.id}
+                      onClick={() => handleNav(() => onNavigateEquipment(eq))}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] transition-all ${
+                        isActive ? "bg-blue-50 text-blue-600 font-semibold" : "text-gray-600 hover:bg-gray-50"
+                      }`}
+                    >
+                      <span className="flex-1 text-left truncate">{eq.name}</span>
+                      {eq.unresolvedRepairCount > 0 && (
+                        <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                          {eq.unresolvedRepairCount}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* 장비 설정 */}
+          <div className="mt-1">
+            <div className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
               관리자
-            </p>
+            </div>
             <button
               onClick={() => handleNav(onEquipmentSettingClick)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
