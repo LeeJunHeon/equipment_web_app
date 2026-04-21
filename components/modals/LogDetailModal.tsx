@@ -30,7 +30,7 @@ function formatDate(dateStr: string | null | undefined) {
   return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
 }
 
-export default function LogDetailModal({ isOpen, onClose, onSave, logId, logs }: LogDetailModalProps) {
+export default function LogDetailModal({ isOpen, onClose, onSave, logId, logs, isAdmin = false }: LogDetailModalProps) {
   const [actionLoading, setActionLoading] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [deletedPhotoIds, setDeletedPhotoIds] = useState<Set<number>>(new Set());
@@ -210,7 +210,9 @@ export default function LogDetailModal({ isOpen, onClose, onSave, logId, logs }:
 
           <div className="flex justify-end gap-2 border-t border-gray-100 px-5 py-3">
             <button onClick={onClose} className="rounded-lg border border-gray-200 px-4 py-2 text-[12px] font-medium text-gray-600 hover:bg-gray-50">닫기</button>
-            <button onClick={handleDelete} disabled={actionLoading} className="rounded-lg border border-red-200 px-4 py-2 text-[12px] font-medium text-red-600 hover:bg-red-50 disabled:opacity-50">삭제</button>
+            {isAdmin && (
+              <button onClick={handleDelete} disabled={actionLoading} className="rounded-lg border border-red-200 px-4 py-2 text-[12px] font-medium text-red-600 hover:bg-red-50 disabled:opacity-50">삭제</button>
+            )}
             {log.status === "처리중" && (
               <button onClick={handleComplete} disabled={actionLoading} className="rounded-lg bg-blue-600 px-4 py-2 text-[12px] font-medium text-white hover:bg-blue-700 disabled:opacity-50">완료처리</button>
             )}
