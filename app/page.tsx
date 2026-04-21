@@ -25,9 +25,17 @@ export default function Home() {
   const [logs, setLogs] = useState<EquipmentLog[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [pmIssueCount, setPmIssueCount] = useState(0);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (window.innerWidth < 1024) setSidebarOpen(false);
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/me")
+      .then((r) => (r.ok ? r.json() : { isAdmin: false }))
+      .then((d) => setIsAdmin(d.isAdmin ?? false))
+      .catch(() => setIsAdmin(false));
   }, []);
 
   const fetchLogs = useCallback(async () => {
@@ -90,6 +98,7 @@ export default function Home() {
         }}
         onEquipmentSettingClick={() => { setCurrentPage("equipment-settings"); setSelectedEquipment(null); }}
         onNavigateHistory={(type) => { setCurrentPage(`history-${type}` as "history-repair" | "history-vent" | "history-cleaning"); setSelectedEquipment(null); }}
+        isAdmin={isAdmin}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
@@ -124,7 +133,7 @@ export default function Home() {
             />
           )}
           {currentPage === "equipment-settings" && (
-            <EquipmentSettingsPage />
+            <EquipmentSettingsPage isAdmin={isAdmin} />
           )}
           {(currentPage === "history-repair" || currentPage === "history-vent" || currentPage === "history-cleaning") && (
             <HistoryPage
@@ -149,6 +158,7 @@ export default function Home() {
         onSave={handleRefresh}
         logId={selectedLogId}
         logs={logs}
+        isAdmin={isAdmin}
       />
     </div>
   );

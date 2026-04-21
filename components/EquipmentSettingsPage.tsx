@@ -4,7 +4,11 @@ import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, Check, X, Wind, Sparkles } from "lucide-react";
 import type { Equipment } from "@/lib/types";
 
-export default function EquipmentSettingsPage() {
+interface EquipmentSettingsPageProps {
+  isAdmin?: boolean;
+}
+
+export default function EquipmentSettingsPage({ isAdmin }: EquipmentSettingsPageProps) {
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);

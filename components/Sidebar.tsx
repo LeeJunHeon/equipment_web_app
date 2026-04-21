@@ -12,6 +12,7 @@ interface SidebarProps {
   onNavigateEquipment: (equipment: Equipment) => void;
   onEquipmentSettingClick: () => void;
   onNavigateHistory: (type: "repair" | "vent" | "cleaning") => void;
+  isAdmin: boolean;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -23,6 +24,7 @@ export default function Sidebar({
   onNavigateEquipment,
   onEquipmentSettingClick,
   onNavigateHistory,
+  isAdmin,
   isOpen,
   onClose,
 }: SidebarProps) {

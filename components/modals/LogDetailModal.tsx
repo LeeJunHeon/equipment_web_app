@@ -10,6 +10,7 @@ interface LogDetailModalProps {
   onSave?: () => void;
   logId: number | null;
   logs: EquipmentLog[];
+  isAdmin?: boolean;
 }
 
 const eventBadge: Record<EventType, { label: string; cls: string }> = {
