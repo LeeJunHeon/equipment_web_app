@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { isAdmin } from "@/lib/auth-utils";
 
 // GET: 모든 옵션 조회
 export async function GET() {
@@ -44,6 +45,10 @@ export async function POST(req: Request) {
 // DELETE: 옵션 삭제
 export async function DELETE(req: Request) {
   try {
+    if (!(await isAdmin())) {
+      return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
+    }
+
     const { type, id } = await req.json();
     if (type === "vent") {
       await prisma.ventReasonOption.delete({ where: { id: Number(id) } });
