@@ -25,6 +25,7 @@ export default function Home() {
   const [logs, setLogs] = useState<EquipmentLog[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [pmIssueCount, setPmIssueCount] = useState(0);
+  const [pmIssueDetails, setPmIssueDetails] = useState<{ name: string; issues: string[] }[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
@@ -53,9 +54,23 @@ export default function Home() {
       if (res.ok) {
         const d = await res.json();
         setPmIssueCount(d.pmIssueCount ?? 0);
+        const details = (d.equipments ?? [])
+          .filter((e: { ventStatus: string; cleaningStatus: string }) =>
+            e.ventStatus !== "normal" || e.cleaningStatus !== "normal"
+          )
+          .map((e: { name: string; isVentTarget: boolean; isCleaningTarget?: boolean; ventStatus: string; cleaningStatus: string }) => {
+            const issues: string[] = [];
+            if (e.isVentTarget && e.ventStatus === "overdue") issues.push("Vent 점검 필요");
+            else if (e.isVentTarget && e.ventStatus === "caution") issues.push("Vent 점검 임박");
+            if (e.isCleaningTarget !== false && e.cleaningStatus === "overdue") issues.push("클리닝 점검 필요");
+            else if (e.isCleaningTarget !== false && e.cleaningStatus === "caution") issues.push("클리닝 점검 임박");
+            return { name: e.name, issues };
+          });
+        setPmIssueDetails(details);
       }
     } catch {
       setPmIssueCount(0);
+      setPmIssueDetails([]);
     }
   }, []);
 
@@ -108,7 +123,11 @@ export default function Home() {
           equipmentName={selectedEquipment?.name}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           unresolvedCount={unresolvedCount}
+          unresolvedDetails={logs
+            .filter((l) => l.eventType === "repair" && l.status === "처리중")
+            .map((l) => ({ equipmentName: l.equipmentName, symptom: l.symptom ?? "" }))}
           pmIssueCount={pmIssueCount}
+          pmIssueDetails={pmIssueDetails}
         />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           {currentPage === "dashboard" && (
