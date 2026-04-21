@@ -8,7 +8,7 @@ interface EquipmentSettingsPageProps {
   isAdmin?: boolean;
 }
 
-export default function EquipmentSettingsPage({ isAdmin }: EquipmentSettingsPageProps) {
+export default function EquipmentSettingsPage({ isAdmin = false }: EquipmentSettingsPageProps) {
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -310,13 +310,11 @@ export default function EquipmentSettingsPage({ isAdmin }: EquipmentSettingsPage
           <h2 className="text-[15px] font-bold text-gray-900">장비 설정</h2>
           <p className="text-[12px] text-gray-400 mt-0.5">장비 목록과 PM 주기를 관리합니다.</p>
         </div>
-        <button
-          onClick={startAdd}
-          className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2 text-[13px] font-semibold text-white hover:bg-blue-700 transition-colors"
-        >
-          <Plus size={15} />
-          장비 추가
-        </button>
+        {isAdmin && (
+          <button onClick={startAdd} className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2 text-[13px] font-semibold text-white hover:bg-blue-700 transition-colors">
+            <Plus size={15} /> 장비 추가
+          </button>
+        )}
       </div>
 
       {/* 장비 추가 폼 */}
@@ -375,18 +373,12 @@ export default function EquipmentSettingsPage({ isAdmin }: EquipmentSettingsPage
                       <td className="px-4 py-3 text-center text-gray-600">{eq.cleaningIntervalDays ?? 14}일</td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => editingId === eq.id ? cancelEdit() : startEdit(eq)}
-                            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
-                          >
-                            <Pencil size={13} />
-                          </button>
-                          <button
-                            onClick={() => deleteEquipment(eq.id)}
-                            className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
-                          >
-                            <Trash2 size={13} />
-                          </button>
+                          {isAdmin && (
+                            <>
+                              <button onClick={() => editingId === eq.id ? cancelEdit() : startEdit(eq)} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"><Pencil size={13} /></button>
+                              <button onClick={() => deleteEquipment(eq.id)} className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"><Trash2 size={13} /></button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -414,18 +406,12 @@ export default function EquipmentSettingsPage({ isAdmin }: EquipmentSettingsPage
                       <p className="text-[11px] text-gray-400">{eq.category ?? "미분류"}</p>
                     </div>
                     <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => editingId === eq.id ? cancelEdit() : startEdit(eq)}
-                        className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                      >
-                        <Pencil size={14} />
-                      </button>
-                      <button
-                        onClick={() => deleteEquipment(eq.id)}
-                        className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      {isAdmin && (
+                        <>
+                          <button onClick={() => editingId === eq.id ? cancelEdit() : startEdit(eq)} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"><Pencil size={14} /></button>
+                          <button onClick={() => deleteEquipment(eq.id)} className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500"><Trash2 size={14} /></button>
+                        </>
+                      )}
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2 text-[11px]">
@@ -475,12 +461,14 @@ export default function EquipmentSettingsPage({ isAdmin }: EquipmentSettingsPage
                   }`}
                 >
                   <span className="text-gray-800">{opt.label}</span>
-                  <button
-                    onClick={() => deleteVentOption(opt.id)}
-                    className="rounded-lg p-1.5 text-gray-300 hover:bg-red-50 hover:text-red-500 transition-colors"
-                  >
-                    <Trash2 size={13} />
-                  </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => deleteVentOption(opt.id)}
+                      className="rounded-lg p-1.5 text-gray-300 hover:bg-red-50 hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  )}
                 </div>
               ))}
               {ventOptions.length === 0 && (
@@ -528,12 +516,14 @@ export default function EquipmentSettingsPage({ isAdmin }: EquipmentSettingsPage
                   }`}
                 >
                   <span className="text-gray-800">{opt.label}</span>
-                  <button
-                    onClick={() => deleteCleaningOption(opt.id)}
-                    className="rounded-lg p-1.5 text-gray-300 hover:bg-red-50 hover:text-red-500 transition-colors"
-                  >
-                    <Trash2 size={13} />
-                  </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => deleteCleaningOption(opt.id)}
+                      className="rounded-lg p-1.5 text-gray-300 hover:bg-red-50 hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  )}
                 </div>
               ))}
               {cleaningOptions.length === 0 && (
