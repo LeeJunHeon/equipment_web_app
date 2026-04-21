@@ -263,9 +263,9 @@ export default function EquipmentSettingsPage({ isAdmin = false }: EquipmentSett
           </label>
           <input
             type="number"
-            min={1}
+            min={0}
             value={formVentInterval}
-            onChange={(e) => setFormVentInterval(Math.max(1, Number(e.target.value)))}
+            onChange={(e) => setFormVentInterval(Math.max(0, Number(e.target.value)))}
             className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-[13px] outline-none focus:border-blue-400"
           />
         </div>
@@ -276,9 +276,9 @@ export default function EquipmentSettingsPage({ isAdmin = false }: EquipmentSett
           </label>
           <input
             type="number"
-            min={1}
+            min={0}
             value={formCleaningInterval}
-            onChange={(e) => setFormCleaningInterval(Math.max(1, Number(e.target.value)))}
+            onChange={(e) => setFormCleaningInterval(Math.max(0, Number(e.target.value)))}
             className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-[13px] outline-none focus:border-blue-400"
           />
         </div>
@@ -369,8 +369,12 @@ export default function EquipmentSettingsPage({ isAdmin = false }: EquipmentSett
                           ? <span className="inline-block rounded-full bg-green-100 text-green-700 text-[10px] font-medium px-2 py-0.5">대상</span>
                           : <span className="inline-block rounded-full bg-gray-100 text-gray-500 text-[10px] font-medium px-2 py-0.5">제외</span>}
                       </td>
-                      <td className="px-4 py-3 text-center text-gray-600">{eq.ventIntervalDays ?? 30}일</td>
-                      <td className="px-4 py-3 text-center text-gray-600">{eq.cleaningIntervalDays ?? 14}일</td>
+                      <td className="px-4 py-3 text-center text-gray-600">
+                        {eq.ventIntervalDays === 0 ? "없음" : `${eq.ventIntervalDays ?? 30}일`}
+                      </td>
+                      <td className="px-4 py-3 text-center text-gray-600">
+                        {eq.cleaningIntervalDays === 0 ? "없음" : `${eq.cleaningIntervalDays ?? 14}일`}
+                      </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
                           {isAdmin && (
