@@ -31,12 +31,14 @@ interface DashboardData {
 interface DashboardPageProps {
   onNavigateEquipment: (equipment: Equipment) => void;
   onDetailClick: (logId: number) => void;
+  onRegisterLog: (type: "repair" | "vent" | "cleaning", equipment: Equipment) => void;
   refreshKey: number;
 }
 
 export default function DashboardPage({
   onNavigateEquipment,
   onDetailClick,
+  onRegisterLog,
   refreshKey,
 }: DashboardPageProps) {
   const [data, setData] = useState<DashboardData | null>(null);
@@ -80,22 +82,43 @@ export default function DashboardPage({
     e.unresolvedRepairs.map((r) => ({ ...r, equipmentName: e.name }))
   );
 
+  // 미해결 수리 장비 이름 목록
+  const unresolvedEquipNames = equipments
+    .filter((e) => e.unresolvedRepairCount > 0)
+    .map((e) => e.name)
+    .join(" · ");
+
+  // PM 이슈 분류 (Vent / 클리닝 건수)
+  const ventIssueCount = equipments.filter(
+    (e) => e.isVentTarget && e.ventStatus !== "normal"
+  ).length;
+  const cleaningIssueCount = equipments.filter(
+    (e) => e.isCleaningTarget !== false && e.cleaningStatus !== "normal"
+  ).length;
+  const pmSubParts: string[] = [];
+  if (ventIssueCount > 0) pmSubParts.push(`Vent ${ventIssueCount}건`);
+  if (cleaningIssueCount > 0) pmSubParts.push(`클리닝 ${cleaningIssueCount}건`);
+  const pmSub = pmSubParts.join(" · ");
+
   const stats = [
     {
       label: "전체 장비",
       value: equipments.length,
+      sub: "활성 장비",
       iconBg: "bg-blue-100",
       icon: <Package size={18} className="text-blue-600" />,
     },
     {
       label: "미해결 수리",
       value: totalUnresolved,
+      sub: unresolvedEquipNames || "없음",
       iconBg: "bg-red-100",
       icon: <AlertTriangle size={18} className="text-red-600" />,
     },
     {
       label: "정기 점검 필요",
       value: pmIssueCount,
+      sub: pmSub || "없음",
       iconBg: "bg-yellow-100",
       icon: <ShieldAlert size={18} className="text-yellow-600" />,
     },
@@ -103,8 +126,12 @@ export default function DashboardPage({
       label: "평균 가동률",
       value:
         equipments.length > 0
-          ? `${Math.round(equipments.reduce((s, e) => s + e.uptimePercent, 0) / equipments.length)}%`
+          ? `${Math.round(
+              equipments.reduce((s, e) => s + e.uptimePercent, 0) /
+                equipments.length
+            )}%`
           : "–",
+      sub: "이번 달 기준",
       iconBg: "bg-green-100",
       icon: <Activity size={18} className="text-green-600" />,
     },
@@ -125,12 +152,13 @@ export default function DashboardPage({
             key={s.label}
             className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white p-4 shadow-sm"
           >
-            <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${s.iconBg}`}>
+            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${s.iconBg}`}>
               {s.icon}
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-[11px] text-gray-500">{s.label}</p>
-              <p className="text-[20px] font-bold">{s.value}</p>
+              <p className="text-[20px] font-bold leading-tight">{s.value}</p>
+              <p className="text-[10px] text-gray-400 truncate">{s.sub}</p>
             </div>
           </div>
         ))}
@@ -266,6 +294,41 @@ export default function DashboardPage({
                       style={{ width: `${eq.uptimePercent}%` }}
                     />
                   </div>
+                </div>
+
+                {/* 빠른 이력 등록 */}
+                <div className="flex gap-1.5 border-t border-gray-50 pt-2">
+                  <button
+                    className="flex-1 rounded-lg border border-gray-200 py-1.5 text-[10px] font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRegisterLog("repair", eq as unknown as Equipment);
+                    }}
+                  >
+                    수리 등록
+                  </button>
+                  {eq.isVentTarget && (
+                    <button
+                      className="flex-1 rounded-lg border border-gray-200 py-1.5 text-[10px] font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRegisterLog("vent", eq as unknown as Equipment);
+                      }}
+                    >
+                      Vent
+                    </button>
+                  )}
+                  {eq.isCleaningTarget !== false && (
+                    <button
+                      className="flex-1 rounded-lg border border-gray-200 py-1.5 text-[10px] font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRegisterLog("cleaning", eq as unknown as Equipment);
+                      }}
+                    >
+                      클리닝
+                    </button>
+                  )}
                 </div>
               </div>
             );

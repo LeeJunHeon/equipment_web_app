@@ -107,6 +107,7 @@ export default function Home() {
                 setSelectedEquipment(eq);
               }}
               onDetailClick={handleDetailClick}
+              onRegisterLog={openRegisterModal}
               refreshKey={refreshKey}
             />
           )}
