@@ -42,6 +42,7 @@ export interface EquipmentLog {
   pumpedDownAt?: string | null;
   cleaningType?: string | null;
   nextScheduledAt?: string | null;
+  completedAt?: string | null;
 }
 
 export interface EntryPhoto {
