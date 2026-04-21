@@ -17,6 +17,7 @@ export function getPmStatus(
   lastDateStr: string | undefined,
   intervalDays: number
 ): PmStatus {
+  if (intervalDays === 0) return "normal"; // 주기 0 = 스케줄 없음
   if (!lastDateStr) return "overdue"; // 기록 없으면 초과 처리
   const last = new Date(lastDateStr);
   const now = new Date();
