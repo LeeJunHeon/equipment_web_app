@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Wrench, Wind, Trash2 } from "lucide-react";
+import { X, Wrench, Wind, Trash2, Plus } from "lucide-react";
 import type { EventType, Equipment, StatusType } from "@/lib/types";
 import PhotoUploader from "@/components/ui/PhotoUploader";
 import VoiceInput from "@/components/ui/VoiceInput";
@@ -44,6 +44,14 @@ export default function LogRegisterModal({
   const [cleaningType, setCleaningType] = useState("정기 클리닝");
   const [nextScheduledAt, setNextScheduledAt] = useState("");
 
+  const [ventReasonOptions, setVentReasonOptions] = useState<{ id: number; label: string }[]>([]);
+  const [cleaningTypeOptions, setCleaningTypeOptions] = useState<{ id: number; label: string }[]>([]);
+  const [showAddVentReason, setShowAddVentReason] = useState(false);
+  const [newVentReasonLabel, setNewVentReasonLabel] = useState("");
+  const [showAddCleaningType, setShowAddCleaningType] = useState(false);
+  const [newCleaningTypeLabel, setNewCleaningTypeLabel] = useState("");
+  const [savingOption, setSavingOption] = useState(false);
+
   useEffect(() => {
     if (!isOpen) {
       setEventType("repair");
@@ -64,6 +72,12 @@ export default function LogRegisterModal({
       setCleaningType("정기 클리닝");
       setNextScheduledAt("");
       setSelectedFiles([]);
+      setVentReasonOptions([]);
+      setCleaningTypeOptions([]);
+      setShowAddVentReason(false);
+      setNewVentReasonLabel("");
+      setShowAddCleaningType(false);
+      setNewCleaningTypeLabel("");
       setError("");
       return;
     }
@@ -84,6 +98,19 @@ export default function LogRegisterModal({
       }
     }
     fetchEquipments();
+    async function fetchOptions() {
+      try {
+        const res = await fetch("/api/log-options");
+        if (res.ok) {
+          const data = await res.json();
+          setVentReasonOptions(data.ventReasons);
+          setCleaningTypeOptions(data.cleaningTypes);
+          if (data.ventReasons.length > 0) setVentReason(data.ventReasons[0].label);
+          if (data.cleaningTypes.length > 0) setCleaningType(data.cleaningTypes[0].label);
+        }
+      } catch {}
+    }
+    fetchOptions();
   }, [isOpen, defaultEventType, defaultEquipmentId]);
 
   if (!isOpen) return null;
@@ -98,7 +125,7 @@ export default function LogRegisterModal({
 
   async function handleSave() {
     if (!equipmentId) { setError("장비를 선택해주세요."); return; }
-    if (!description.trim()) { setError("내용을 입력해주세요."); return; }
+    if (eventType === "repair" && !description.trim()) { setError("조치 사항을 입력해주세요."); return; }
 
     setSaving(true);
     setError("");
@@ -206,13 +233,15 @@ export default function LogRegisterModal({
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-[11px] font-semibold text-gray-500">내용</label>
+              <label className="text-[11px] font-semibold text-gray-500">
+                {eventType === "repair" ? "조치 사항" : "비고"}
+              </label>
               <VoiceInput
                 onResult={(text) => setDescription((prev) => prev ? prev + " " + text : text)}
                 disabled={saving}
               />
             </div>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400 resize-none" placeholder="상세 내용을 입력하세요..." />
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400 resize-none" placeholder={eventType === "repair" ? "조치 내용을 입력하세요..." : "특이사항이 있으면 입력하세요..."} />
           </div>
 
           {eventType === "repair" && (
@@ -298,7 +327,75 @@ export default function LogRegisterModal({
           {eventType === "vent" && (
             <div className="space-y-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
               <p className="text-[11px] font-semibold text-gray-500">Vent 정보</p>
-              <div><label className="mb-1 block text-[11px] text-gray-500">Vent 사유</label><select value={ventReason} onChange={(e) => setVentReason(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"><option>타겟 교체</option><option>정기 점검</option><option>수리</option><option>클리닝</option><option>기타</option></select></div>
+              <div>
+                <label className="mb-1 block text-[11px] text-gray-500">Vent 사유</label>
+                <select
+                  value={ventReason}
+                  onChange={(e) => setVentReason(e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"
+                >
+                  {ventReasonOptions.map((opt) => (
+                    <option key={opt.id} value={opt.label}>{opt.label}</option>
+                  ))}
+                </select>
+                {!showAddVentReason ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowAddVentReason(true)}
+                    className="mt-1.5 flex items-center gap-1 text-[11px] text-blue-500 hover:text-blue-700"
+                  >
+                    <Plus size={11} /> 사유 추가
+                  </button>
+                ) : (
+                  <div className="mt-2 flex gap-2">
+                    <input
+                      type="text"
+                      value={newVentReasonLabel}
+                      onChange={(e) => setNewVentReasonLabel(e.target.value)}
+                      placeholder="새 사유 입력"
+                      autoFocus
+                      className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-[12px] outline-none focus:border-blue-400"
+                      onKeyDown={(e) => {
+                        if (e.key === "Escape") { setShowAddVentReason(false); setNewVentReasonLabel(""); }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      disabled={!newVentReasonLabel.trim() || savingOption}
+                      onClick={async () => {
+                        if (!newVentReasonLabel.trim() || savingOption) return;
+                        setSavingOption(true);
+                        try {
+                          const res = await fetch("/api/log-options", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ type: "vent", label: newVentReasonLabel.trim() }),
+                          });
+                          if (res.ok) {
+                            const newOpt = await res.json();
+                            setVentReasonOptions((prev) => [...prev, newOpt]);
+                            setVentReason(newOpt.label);
+                            setNewVentReasonLabel("");
+                            setShowAddVentReason(false);
+                          }
+                        } finally {
+                          setSavingOption(false);
+                        }
+                      }}
+                      className="rounded-lg bg-blue-600 px-3 py-1.5 text-[12px] font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      추가
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setShowAddVentReason(false); setNewVentReasonLabel(""); }}
+                      className="rounded-lg border border-gray-200 px-3 py-1.5 text-[12px] font-medium text-gray-600 hover:bg-gray-50"
+                    >
+                      취소
+                    </button>
+                  </div>
+                )}
+              </div>
               <div><label className="mb-1 block text-[11px] text-gray-500">도달 압력</label><input type="text" value={finalPressure} onChange={(e) => setFinalPressure(e.target.value)} placeholder="예: 3.2e-6 Torr" className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400" /></div>
               <div><label className="mb-1 block text-[11px] text-gray-500">Pump-down 완료 시각</label><input type="datetime-local" value={pumpedDownAt} onChange={(e) => setPumpedDownAt(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400" /></div>
             </div>
@@ -307,7 +404,75 @@ export default function LogRegisterModal({
           {eventType === "cleaning" && (
             <div className="space-y-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
               <p className="text-[11px] font-semibold text-gray-500">클리닝 정보</p>
-              <div><label className="mb-1 block text-[11px] text-gray-500">클리닝 유형</label><select value={cleaningType} onChange={(e) => setCleaningType(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"><option>정기 클리닝</option><option>챔버 세정</option><option>비정기</option><option>기타</option></select></div>
+              <div>
+                <label className="mb-1 block text-[11px] text-gray-500">클리닝 유형</label>
+                <select
+                  value={cleaningType}
+                  onChange={(e) => setCleaningType(e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"
+                >
+                  {cleaningTypeOptions.map((opt) => (
+                    <option key={opt.id} value={opt.label}>{opt.label}</option>
+                  ))}
+                </select>
+                {!showAddCleaningType ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowAddCleaningType(true)}
+                    className="mt-1.5 flex items-center gap-1 text-[11px] text-blue-500 hover:text-blue-700"
+                  >
+                    <Plus size={11} /> 유형 추가
+                  </button>
+                ) : (
+                  <div className="mt-2 flex gap-2">
+                    <input
+                      type="text"
+                      value={newCleaningTypeLabel}
+                      onChange={(e) => setNewCleaningTypeLabel(e.target.value)}
+                      placeholder="새 유형 입력"
+                      autoFocus
+                      className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-[12px] outline-none focus:border-blue-400"
+                      onKeyDown={(e) => {
+                        if (e.key === "Escape") { setShowAddCleaningType(false); setNewCleaningTypeLabel(""); }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      disabled={!newCleaningTypeLabel.trim() || savingOption}
+                      onClick={async () => {
+                        if (!newCleaningTypeLabel.trim() || savingOption) return;
+                        setSavingOption(true);
+                        try {
+                          const res = await fetch("/api/log-options", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ type: "cleaning", label: newCleaningTypeLabel.trim() }),
+                          });
+                          if (res.ok) {
+                            const newOpt = await res.json();
+                            setCleaningTypeOptions((prev) => [...prev, newOpt]);
+                            setCleaningType(newOpt.label);
+                            setNewCleaningTypeLabel("");
+                            setShowAddCleaningType(false);
+                          }
+                        } finally {
+                          setSavingOption(false);
+                        }
+                      }}
+                      className="rounded-lg bg-blue-600 px-3 py-1.5 text-[12px] font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      추가
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setShowAddCleaningType(false); setNewCleaningTypeLabel(""); }}
+                      className="rounded-lg border border-gray-200 px-3 py-1.5 text-[12px] font-medium text-gray-600 hover:bg-gray-50"
+                    >
+                      취소
+                    </button>
+                  </div>
+                )}
+              </div>
               <div><label className="mb-1 block text-[11px] text-gray-500">다음 클리닝 예정일</label><input type="date" value={nextScheduledAt} onChange={(e) => setNextScheduledAt(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400" /></div>
             </div>
           )}
