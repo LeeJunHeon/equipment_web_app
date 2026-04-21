@@ -17,6 +17,7 @@ interface EquipmentDashboard {
   ventStatus: "normal" | "caution" | "overdue";
   cleaningStatus: "normal" | "caution" | "overdue";
   uptimePercent: number;
+  downtimeHours: number;
   ventIntervalDays: number;
   cleaningIntervalDays: number;
   isCleaningTarget?: boolean;
@@ -131,7 +132,10 @@ export default function DashboardPage({
                 equipments.length
             )}%`
           : "–",
-      sub: "이번 달 기준",
+      sub: (() => {
+        const totalDowntime = equipments.reduce((s, e) => s + e.downtimeHours, 0);
+        return totalDowntime > 0 ? `비가동 합계 ${totalDowntime}h` : "이번 달 기준";
+      })(),
       iconBg: "bg-green-100",
       icon: <Activity size={18} className="text-green-600" />,
     },
@@ -294,6 +298,11 @@ export default function DashboardPage({
                       style={{ width: `${eq.uptimePercent}%` }}
                     />
                   </div>
+                  {eq.downtimeHours > 0 && (
+                    <p className="text-[10px] text-gray-400 mt-1">
+                      비가동 {eq.downtimeHours}h
+                    </p>
+                  )}
                 </div>
 
                 {/* 빠른 이력 등록 */}
