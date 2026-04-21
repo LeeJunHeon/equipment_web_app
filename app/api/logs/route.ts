@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { isAdmin } from "@/lib/auth-utils";
 
 export async function GET(request: NextRequest) {
   try {
@@ -87,6 +88,17 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    // 완료처리(status → "완료" 단일 변경)는 모두 허용
+    // 그 외 수정은 admin만 허용
+    const bodyForCheck = await request.clone().json().catch(() => ({}));
+    const isOnlyComplete =
+      Object.keys(bodyForCheck).filter((k) => k !== "id").length === 1 &&
+      bodyForCheck.status === "완료";
+
+    if (!isOnlyComplete && !(await isAdmin())) {
+      return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
+    }
+
     const body = await request.json();
     const { id, ...updateData } = body;
 
@@ -130,6 +142,10 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    if (!(await isAdmin())) {
+      return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
+    }
+
     const body = await request.json();
     const { id } = body;
 
