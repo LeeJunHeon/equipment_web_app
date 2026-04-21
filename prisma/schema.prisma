@@ -5,7 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  schemas  = ["equipment"]
+  schemas  = ["equipment", "public"]
 }
 
 model Equipment {
@@ -114,4 +114,15 @@ model CleaningTypeOption {
 
   @@map("cleaning_type_options")
   @@schema("equipment")
+}
+
+model InventoryUser {
+  id       Int     @id @default(autoincrement())
+  name     String
+  email    String? @unique
+  role     String?
+  isActive String  @default("Y") @map("is_active")
+
+  @@map("user")
+  @@schema("public")
 }
