@@ -98,3 +98,21 @@ model EquipmentEntryPhoto {
   @@map("equipment_entry_photos")
   @@schema("equipment")
 }
+
+model VentReasonOption {
+  id        Int      @id @default(autoincrement())
+  label     String   @db.VarChar(100)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@map("vent_reason_options")
+  @@schema("equipment")
+}
+
+model CleaningTypeOption {
+  id        Int      @id @default(autoincrement())
+  label     String   @db.VarChar(100)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@map("cleaning_type_options")
+  @@schema("equipment")
+}
