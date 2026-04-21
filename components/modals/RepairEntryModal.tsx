@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Camera, FileText, Send } from "lucide-react";
 import PhotoUploader from "@/components/ui/PhotoUploader";
 import VoiceInput from "@/components/ui/VoiceInput";
@@ -23,6 +23,15 @@ export default function RepairEntryModal({
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!isOpen) {
+      setMemo("");
+      setSelectedFiles([]);
+      setMode("both");
+      setError("");
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

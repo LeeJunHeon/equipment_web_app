@@ -301,7 +301,7 @@ export default function EquipmentDetailPage({
   return (
     <div className="space-y-4">
       {/* 장비 기본 정보 */}
-      <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm flex items-center justify-between">
+      <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 className="text-base font-bold text-gray-900">{equipment.name}</h2>
           <p className="text-[12px] text-gray-400 mt-0.5">
@@ -409,7 +409,7 @@ export default function EquipmentDetailPage({
                       <tr className="border-b border-gray-100 bg-gray-50">
                         <th className="px-3 py-2 text-left font-semibold text-gray-500">부품명</th>
                         <th className="px-3 py-2 text-center font-semibold text-gray-500">교체 횟수</th>
-                        <th className="px-3 py-2 text-center font-semibold text-gray-500">총 수량</th>
+                        <th className="px-3 py-2 text-center font-semibold text-gray-500 hidden sm:table-cell">총 수량</th>
                         <th className="px-3 py-2 text-right font-semibold text-gray-500">최근 교체</th>
                       </tr>
                     </thead>
@@ -428,7 +428,7 @@ export default function EquipmentDetailPage({
                               {p.count}회
                             </span>
                           </td>
-                          <td className="px-3 py-2 text-center text-gray-600">{p.totalQty}개</td>
+                          <td className="px-3 py-2 text-center text-gray-600 hidden sm:table-cell">{p.totalQty}개</td>
                           <td className="px-3 py-2 text-right text-gray-400">
                             {p.lastDate.split("T")[0]}
                           </td>
@@ -446,7 +446,7 @@ export default function EquipmentDetailPage({
       {/* 유지 보수 탭 */}
       {activeTab === "maintenance" && (
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
               <div className="flex items-center gap-2 mb-1">
                 <Wind size={14} className="text-blue-500" />

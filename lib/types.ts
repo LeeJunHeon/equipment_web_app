@@ -1,4 +1,4 @@
-export type PageId = "dashboard" | "equipment";
+export type PageId = "dashboard" | "equipment" | "equipment-settings";
 
 export type EventType = "repair" | "vent" | "cleaning";
 export type StatusType = "처리중" | "완료";

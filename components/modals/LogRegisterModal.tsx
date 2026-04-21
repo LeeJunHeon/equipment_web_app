@@ -45,7 +45,28 @@ export default function LogRegisterModal({
   const [nextScheduledAt, setNextScheduledAt] = useState("");
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setEventType("repair");
+      setEquipmentId("");
+      setOperator("이준헌");
+      setOccurredAt("");
+      setDescription("");
+      setSymptom("");
+      setPartsList([]);
+      setNewPartName("");
+      setNewPartQty(1);
+      setIsExternal("자체수리");
+      setVendorName("");
+      setRepairStatus("처리중");
+      setVentReason("타겟 교체");
+      setFinalPressure("");
+      setPumpedDownAt("");
+      setCleaningType("정기 클리닝");
+      setNextScheduledAt("");
+      setSelectedFiles([]);
+      setError("");
+      return;
+    }
     setError("");
     setSelectedFiles([]);
     setPartsList([]);
@@ -63,7 +84,7 @@ export default function LogRegisterModal({
       }
     }
     fetchEquipments();
-  }, [isOpen]);
+  }, [isOpen, defaultEventType, defaultEquipmentId]);
 
   if (!isOpen) return null;
 

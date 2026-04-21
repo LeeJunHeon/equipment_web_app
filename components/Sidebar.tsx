@@ -6,7 +6,7 @@ import { useSession, signOut } from "next-auth/react";
 import type { Equipment } from "@/lib/types";
 
 interface SidebarProps {
-  currentPage: "dashboard" | "equipment";
+  currentPage: "dashboard" | "equipment" | "equipment-settings";
   selectedEquipmentId: number | null;
   onNavigateDashboard: () => void;
   onNavigateEquipment: (equipment: Equipment) => void;
@@ -163,9 +163,13 @@ export default function Sidebar({
             </p>
             <button
               onClick={() => handleNav(onEquipmentSettingClick)}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-600 transition-all hover:bg-gray-50 hover:text-gray-900"
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
+                currentPage === "equipment-settings"
+                  ? "bg-blue-50 text-blue-600 font-semibold"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              }`}
             >
-              <Settings size={18} className="text-gray-400" />
+              <Settings size={18} className={currentPage === "equipment-settings" ? "text-blue-500" : "text-gray-400"} />
               <span>장비 설정</span>
             </button>
           </div>

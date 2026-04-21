@@ -6,12 +6,12 @@ import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
 import DashboardPage from "@/components/DashboardPage";
 import EquipmentDetailPage from "@/components/EquipmentDetailPage";
+import EquipmentSettingsPage from "@/components/EquipmentSettingsPage";
 import LogRegisterModal from "@/components/modals/LogRegisterModal";
 import LogDetailModal from "@/components/modals/LogDetailModal";
-import EquipmentModal from "@/components/modals/EquipmentModal";
 
 export default function Home() {
-  const [currentPage, setCurrentPage] = useState<"dashboard" | "equipment">("dashboard");
+  const [currentPage, setCurrentPage] = useState<"dashboard" | "equipment" | "equipment-settings">("dashboard");
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
 
   const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -19,7 +19,6 @@ export default function Home() {
   const [registerDefaultEquipmentId, setRegisterDefaultEquipmentId] = useState<number | undefined>(undefined);
 
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [showEquipmentModal, setShowEquipmentModal] = useState(false);
   const [selectedLogId, setSelectedLogId] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [logs, setLogs] = useState<EquipmentLog[]>([]);
@@ -88,7 +87,7 @@ export default function Home() {
           setCurrentPage("equipment");
           setSelectedEquipment(eq);
         }}
-        onEquipmentSettingClick={() => setShowEquipmentModal(true)}
+        onEquipmentSettingClick={() => { setCurrentPage("equipment-settings"); setSelectedEquipment(null); }}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
@@ -121,6 +120,9 @@ export default function Home() {
               refreshKey={refreshKey}
             />
           )}
+          {currentPage === "equipment-settings" && (
+            <EquipmentSettingsPage />
+          )}
         </main>
       </div>
 
@@ -137,13 +139,6 @@ export default function Home() {
         onSave={handleRefresh}
         logId={selectedLogId}
         logs={logs}
-      />
-      <EquipmentModal
-        isOpen={showEquipmentModal}
-        onClose={() => {
-          setShowEquipmentModal(false);
-          handleRefresh();
-        }}
       />
     </div>
   );
