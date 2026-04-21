@@ -95,7 +95,12 @@ export async function PATCH(request: NextRequest) {
     }
 
     const data: Record<string, unknown> = {};
-    if (updateData.status !== undefined) data.status = updateData.status;
+    if (updateData.status !== undefined) {
+      data.status = updateData.status;
+      if (updateData.status === "완료") {
+        data.completedAt = new Date();
+      }
+    }
     if (updateData.description !== undefined) data.description = updateData.description;
     if (updateData.operator !== undefined) data.operator = updateData.operator;
     if (updateData.occurredAt !== undefined) data.occurredAt = new Date(updateData.occurredAt);
