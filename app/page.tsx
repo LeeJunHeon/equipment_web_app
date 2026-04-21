@@ -21,7 +21,7 @@ export default function Home() {
 
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedLogId, setSelectedLogId] = useState<number | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [logs, setLogs] = useState<EquipmentLog[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [pmIssueCount, setPmIssueCount] = useState(0);
@@ -29,7 +29,7 @@ export default function Home() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    if (window.innerWidth < 1024) setSidebarOpen(false);
+    if (window.innerWidth >= 1024) setSidebarOpen(true);
   }, []);
 
   useEffect(() => {
