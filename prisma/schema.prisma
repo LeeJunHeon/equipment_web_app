@@ -41,8 +41,6 @@ model EquipmentLog {
   vendorName    String?   @db.VarChar(100) @map("vendor_name")
 
   ventReason    String?   @db.VarChar(50)  @map("vent_reason")
-  finalPressure String?   @db.VarChar(50)  @map("final_pressure")
-  pumpedDownAt  DateTime? @map("pumped_down_at")
 
   cleaningType      String?   @db.VarChar(50) @map("cleaning_type")
   nextScheduledAt   DateTime? @map("next_scheduled_at") @db.Date
