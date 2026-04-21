@@ -460,7 +460,7 @@ export default function EquipmentDetailPage({
                     <p className="text-[13px] font-bold text-gray-900">{lastVent.occurredAt.split("T")[0]}</p>
                     <p className="text-[11px] text-gray-400">{daysSince(lastVent.occurredAt)}일 전</p>
                     <span className={`mt-1 inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full ${color.bg} ${color.text}`}>
-                      {getPmStatusLabel(ventStatus)} (주기 {equipment.ventIntervalDays ?? PM_CONFIG.ventIntervalDays}일)
+                      {getPmStatusLabel(ventStatus)}{(equipment.ventIntervalDays ?? PM_CONFIG.ventIntervalDays) > 0 ? ` (주기 ${equipment.ventIntervalDays ?? PM_CONFIG.ventIntervalDays}일)` : " (주기 없음)"}
                     </span>
                   </>
                 ) : (
@@ -487,7 +487,7 @@ export default function EquipmentDetailPage({
                       <p className="text-[13px] font-bold text-gray-900">{lastCleaning.occurredAt.split("T")[0]}</p>
                       <p className="text-[11px] text-gray-400">{daysSince(lastCleaning.occurredAt)}일 전</p>
                       <span className={`mt-1 inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full ${color.bg} ${color.text}`}>
-                        {getPmStatusLabel(cleaningStatus)} (주기 {equipment.cleaningIntervalDays ?? PM_CONFIG.cleaningIntervalDays}일)
+                        {getPmStatusLabel(cleaningStatus)}{(equipment.cleaningIntervalDays ?? PM_CONFIG.cleaningIntervalDays) > 0 ? ` (주기 ${equipment.cleaningIntervalDays ?? PM_CONFIG.cleaningIntervalDays}일)` : " (주기 없음)"}
                       </span>
                     </>
                   ) : (
