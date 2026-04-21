@@ -18,8 +18,17 @@ export default function EquipmentSettingsPage() {
   const [formVentInterval, setFormVentInterval] = useState(30);
   const [formCleaningInterval, setFormCleaningInterval] = useState(14);
 
+  const [ventOptions, setVentOptions] = useState<{ id: number; label: string }[]>([]);
+  const [cleaningOptions, setCleaningOptions] = useState<{ id: number; label: string }[]>([]);
+  const [optionsLoading, setOptionsLoading] = useState(true);
+  const [newVentLabel, setNewVentLabel] = useState("");
+  const [newCleaningLabel, setNewCleaningLabel] = useState("");
+  const [savingVent, setSavingVent] = useState(false);
+  const [savingCleaning, setSavingCleaning] = useState(false);
+
   useEffect(() => {
     fetchEquipments();
+    fetchOptions();
   }, []);
 
   async function fetchEquipments() {
@@ -32,6 +41,85 @@ export default function EquipmentSettingsPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function fetchOptions() {
+    setOptionsLoading(true);
+    try {
+      const res = await fetch("/api/log-options");
+      if (res.ok) {
+        const data = await res.json();
+        setVentOptions(data.ventReasons);
+        setCleaningOptions(data.cleaningTypes);
+      }
+    } catch {
+      setVentOptions([]);
+      setCleaningOptions([]);
+    } finally {
+      setOptionsLoading(false);
+    }
+  }
+
+  async function addVentOption() {
+    if (!newVentLabel.trim() || savingVent) return;
+    setSavingVent(true);
+    try {
+      const res = await fetch("/api/log-options", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "vent", label: newVentLabel.trim() }),
+      });
+      if (res.ok) {
+        const newOpt = await res.json();
+        setVentOptions((prev) => [...prev, newOpt]);
+        setNewVentLabel("");
+      }
+    } finally {
+      setSavingVent(false);
+    }
+  }
+
+  async function deleteVentOption(id: number) {
+    if (!confirm("이 사유를 삭제하시겠습니까?")) return;
+    try {
+      await fetch("/api/log-options", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "vent", id }),
+      });
+      setVentOptions((prev) => prev.filter((o) => o.id !== id));
+    } catch {}
+  }
+
+  async function addCleaningOption() {
+    if (!newCleaningLabel.trim() || savingCleaning) return;
+    setSavingCleaning(true);
+    try {
+      const res = await fetch("/api/log-options", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "cleaning", label: newCleaningLabel.trim() }),
+      });
+      if (res.ok) {
+        const newOpt = await res.json();
+        setCleaningOptions((prev) => [...prev, newOpt]);
+        setNewCleaningLabel("");
+      }
+    } finally {
+      setSavingCleaning(false);
+    }
+  }
+
+  async function deleteCleaningOption(id: number) {
+    if (!confirm("이 유형을 삭제하시겠습니까?")) return;
+    try {
+      await fetch("/api/log-options", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "cleaning", id }),
+      });
+      setCleaningOptions((prev) => prev.filter((o) => o.id !== id));
+    } catch {}
   }
 
   function startAdd() {
@@ -359,6 +447,116 @@ export default function EquipmentSettingsPage() {
           </div>
         </>
       )}
+      {/* ── Vent 사유 / 클리닝 유형 관리 ── */}
+      <div className="border-t border-gray-100 pt-5 space-y-5">
+
+        {/* Vent 사유 */}
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <Wind size={15} className="text-blue-500" />
+            <div>
+              <h2 className="text-[15px] font-bold text-gray-900">Vent 사유 관리</h2>
+              <p className="text-[12px] text-gray-400 mt-0.5">이력 등록 시 표시될 Vent 사유 목록</p>
+            </div>
+          </div>
+          {optionsLoading ? (
+            <div className="h-10 bg-gray-100 rounded-xl animate-pulse" />
+          ) : (
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+              {ventOptions.map((opt, idx) => (
+                <div
+                  key={opt.id}
+                  className={`flex items-center justify-between px-4 py-2.5 text-[13px] ${
+                    idx !== ventOptions.length - 1 ? "border-b border-gray-50" : ""
+                  }`}
+                >
+                  <span className="text-gray-800">{opt.label}</span>
+                  <button
+                    onClick={() => deleteVentOption(opt.id)}
+                    className="rounded-lg p-1.5 text-gray-300 hover:bg-red-50 hover:text-red-500 transition-colors"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              ))}
+              {ventOptions.length === 0 && (
+                <div className="py-6 text-center text-[12px] text-gray-400">등록된 사유가 없습니다.</div>
+              )}
+            </div>
+          )}
+          <div className="mt-2 flex gap-2">
+            <input
+              type="text"
+              value={newVentLabel}
+              onChange={(e) => setNewVentLabel(e.target.value)}
+              placeholder="새 사유 이름 입력"
+              className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"
+              onKeyDown={(e) => { if (e.key === "Enter") addVentOption(); }}
+            />
+            <button
+              onClick={addVentOption}
+              disabled={!newVentLabel.trim() || savingVent}
+              className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-[12px] font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              <Plus size={13} /> 추가
+            </button>
+          </div>
+        </div>
+
+        {/* 클리닝 유형 */}
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles size={15} className="text-green-500" />
+            <div>
+              <h2 className="text-[15px] font-bold text-gray-900">클리닝 유형 관리</h2>
+              <p className="text-[12px] text-gray-400 mt-0.5">이력 등록 시 표시될 클리닝 유형 목록</p>
+            </div>
+          </div>
+          {optionsLoading ? (
+            <div className="h-10 bg-gray-100 rounded-xl animate-pulse" />
+          ) : (
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+              {cleaningOptions.map((opt, idx) => (
+                <div
+                  key={opt.id}
+                  className={`flex items-center justify-between px-4 py-2.5 text-[13px] ${
+                    idx !== cleaningOptions.length - 1 ? "border-b border-gray-50" : ""
+                  }`}
+                >
+                  <span className="text-gray-800">{opt.label}</span>
+                  <button
+                    onClick={() => deleteCleaningOption(opt.id)}
+                    className="rounded-lg p-1.5 text-gray-300 hover:bg-red-50 hover:text-red-500 transition-colors"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              ))}
+              {cleaningOptions.length === 0 && (
+                <div className="py-6 text-center text-[12px] text-gray-400">등록된 유형이 없습니다.</div>
+              )}
+            </div>
+          )}
+          <div className="mt-2 flex gap-2">
+            <input
+              type="text"
+              value={newCleaningLabel}
+              onChange={(e) => setNewCleaningLabel(e.target.value)}
+              placeholder="새 유형 이름 입력"
+              className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"
+              onKeyDown={(e) => { if (e.key === "Enter") addCleaningOption(); }}
+            />
+            <button
+              onClick={addCleaningOption}
+              disabled={!newCleaningLabel.trim() || savingCleaning}
+              className="flex items-center gap-1 rounded-lg bg-green-600 px-3 py-2 text-[12px] font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+            >
+              <Plus size={13} /> 추가
+            </button>
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }
