@@ -25,7 +25,7 @@ export default function EquipmentDetailPage({
   onDetailClick,
   refreshKey,
 }: EquipmentDetailPageProps) {
-  const [activeTab, setActiveTab] = useState<Tab>("repair");
+  const [activeTab, setActiveTab] = useState<Tab>("maintenance");
   const [logs, setLogs] = useState<EquipmentLog[]>([]);
   const [loading, setLoading] = useState(true);
 
