@@ -58,7 +58,7 @@ export default function HistoryPage({ eventType, refreshKey, onRefresh }: Histor
       {/* 목록 */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         {/* 테이블 헤더 */}
-        <div className="hidden sm:grid grid-cols-[120px_100px_1fr_80px_80px] gap-2 px-4 py-2.5 border-b border-gray-100 bg-gray-50 text-[11px] font-semibold text-gray-500">
+        <div className={`hidden sm:grid ${eventType === "repair" ? "grid-cols-[120px_100px_1fr_80px_80px]" : "grid-cols-[120px_100px_1fr_80px]"} gap-2 px-4 py-2.5 border-b border-gray-100 bg-gray-50 text-[11px] font-semibold text-gray-500`}>
           <span>날짜</span>
           <span>장비</span>
           <span>{eventType === "repair" ? "증상 / 조치" : eventType === "vent" ? "사유 / 비고" : "유형 / 비고"}</span>
@@ -84,7 +84,7 @@ export default function HistoryPage({ eventType, refreshKey, onRefresh }: Histor
           <div
             key={log.id}
             onClick={() => setSelectedLogId(log.id)}
-            className="grid grid-cols-[120px_100px_1fr_80px_80px] gap-2 px-4 py-3 border-b border-gray-50 last:border-0 hover:bg-gray-50 cursor-pointer items-center text-[12px]"
+            className={`grid ${eventType === "repair" ? "grid-cols-[120px_100px_1fr_80px_80px]" : "grid-cols-[120px_100px_1fr_80px]"} gap-2 px-4 py-3 border-b border-gray-50 last:border-0 hover:bg-gray-50 cursor-pointer items-center text-[12px]`}
           >
             <span className="text-gray-500 text-[11px]">{formatDate(log.occurredAt)}</span>
             <span className="font-medium text-gray-900 truncate">{log.equipmentName}</span>
