@@ -140,6 +140,7 @@ export default function Home() {
               eventType={currentPage.replace("history-", "") as "repair" | "vent" | "cleaning"}
               refreshKey={refreshKey}
               onRefresh={handleRefresh}
+              isAdmin={isAdmin}
             />
           )}
         </main>
