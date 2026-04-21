@@ -162,7 +162,7 @@ export default function DashboardPage({
             <div className="min-w-0">
               <p className="text-[11px] text-gray-500">{s.label}</p>
               <p className="text-[20px] font-bold leading-tight">{s.value}</p>
-              <p className="text-[10px] text-gray-400 truncate">{s.sub}</p>
+              <p className="text-[11px] text-gray-400 truncate">{s.sub}</p>
             </div>
           </div>
         ))}
@@ -308,7 +308,7 @@ export default function DashboardPage({
                 {/* 빠른 이력 등록 */}
                 <div className="flex gap-1.5 border-t border-gray-50 pt-2">
                   <button
-                    className="flex-1 rounded-lg border border-gray-200 py-1.5 text-[10px] font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                    className="flex-1 rounded-lg border border-gray-200 py-2.5 text-[11px] font-medium text-gray-600 hover:bg-gray-50 transition-colors"
                     onClick={(e) => {
                       e.stopPropagation();
                       onRegisterLog("repair", eq as unknown as Equipment);
@@ -318,7 +318,7 @@ export default function DashboardPage({
                   </button>
                   {eq.isVentTarget && (
                     <button
-                      className="flex-1 rounded-lg border border-gray-200 py-1.5 text-[10px] font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                      className="flex-1 rounded-lg border border-gray-200 py-2.5 text-[11px] font-medium text-gray-600 hover:bg-gray-50 transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();
                         onRegisterLog("vent", eq as unknown as Equipment);
@@ -329,7 +329,7 @@ export default function DashboardPage({
                   )}
                   {eq.isCleaningTarget !== false && (
                     <button
-                      className="flex-1 rounded-lg border border-gray-200 py-1.5 text-[10px] font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                      className="flex-1 rounded-lg border border-gray-200 py-2.5 text-[11px] font-medium text-gray-600 hover:bg-gray-50 transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();
                         onRegisterLog("cleaning", eq as unknown as Equipment);
@@ -355,8 +355,8 @@ export default function DashboardPage({
                 <tr className="border-b border-gray-100 bg-gray-50">
                   <th className="px-4 py-2.5 font-semibold text-gray-500">장비</th>
                   <th className="px-4 py-2.5 font-semibold text-gray-500">증상</th>
-                  <th className="px-4 py-2.5 font-semibold text-gray-500">담당자</th>
-                  <th className="px-4 py-2.5 font-semibold text-gray-500">발생일</th>
+                  <th className="hidden sm:table-cell px-4 py-2.5 font-semibold text-gray-500">담당자</th>
+                  <th className="hidden sm:table-cell px-4 py-2.5 font-semibold text-gray-500">발생일</th>
                   <th className="px-4 py-2.5 font-semibold text-gray-500">경과일</th>
                 </tr>
               </thead>
@@ -365,8 +365,8 @@ export default function DashboardPage({
                   <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50">
                     <td className="px-4 py-2.5 font-medium text-gray-900">{r.equipmentName}</td>
                     <td className="px-4 py-2.5 text-gray-600">{r.symptom ?? "–"}</td>
-                    <td className="px-4 py-2.5 text-gray-600">{r.operator}</td>
-                    <td className="px-4 py-2.5 text-gray-600">{r.occurredAt.split("T")[0]}</td>
+                    <td className="hidden sm:table-cell px-4 py-2.5 text-gray-600">{r.operator}</td>
+                    <td className="hidden sm:table-cell px-4 py-2.5 text-gray-600">{r.occurredAt.split("T")[0]}</td>
                     <td className="px-4 py-2.5">
                       <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-600">
                         {daysSince(r.occurredAt)}일
