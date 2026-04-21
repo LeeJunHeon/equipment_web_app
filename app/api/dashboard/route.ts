@@ -21,6 +21,7 @@ export async function GET() {
             status: true,
             symptom: true,
             operator: true,
+            completedAt: true,
           },
         },
       },
@@ -44,29 +45,58 @@ export async function GET() {
         ? "normal"
         : getPmStatus(lastCleaningDate, eq.cleaningIntervalDays);
 
-      // 이번 달 가동률 계산
-      // 수리 중인 기간(시작~완료 or 시작~지금)을 비가동 시간으로 계산
-      const monthDays = now.getDate(); // 이번 달 경과 일수
-      let downtimeDays = 0;
+      // 이번 달 기준 시간(ms)
+      const monthDays = now.getDate();
+      const monthTotalMs = monthDays * 24 * 60 * 60 * 1000;
+      const monthStartMs = thisMonthStart.getTime();
+      const nowMs = now.getTime();
 
-      for (const repair of repairLogs) {
-        const start = repair.occurredAt;
-        // 완료된 수리는 완료 시점이 없으므로 status로 판단
-        // 처리중이면 오늘까지, 완료면 다음 완료 기록 기준으로 계산(단순화)
-        const repairStart = start < thisMonthStart ? thisMonthStart : start;
+      // 이번 달에 영향을 주는 수리만 필터
+      // - 처리중: 시작 시점 무관하게 포함 (지금도 비가동 중)
+      // - 완료: completedAt이 이번 달 이후인 것만 포함
+      const relevantRepairs = repairLogs.filter((r) => {
+        if (r.status === "처리중") return true;
+        if (!r.completedAt) return false;
+        return r.completedAt.getTime() >= monthStartMs;
+      });
+
+      // 각 수리의 비가동 구간 [startMs, endMs] 계산
+      const ranges: [number, number][] = [];
+      for (const repair of relevantRepairs) {
+        const startMs = Math.max(repair.occurredAt.getTime(), monthStartMs);
+        let endMs: number;
 
         if (repair.status === "처리중") {
-          const days = Math.floor(
-            (now.getTime() - repairStart.getTime()) / (1000 * 60 * 60 * 24)
-          );
-          downtimeDays += Math.max(0, days);
+          endMs = nowMs;
+        } else if (repair.completedAt) {
+          endMs = Math.min(repair.completedAt.getTime(), nowMs);
+        } else {
+          continue;
+        }
+
+        if (endMs > startMs) {
+          ranges.push([startMs, endMs]);
         }
       }
 
+      // 겹치는 구간 병합 (이중 계산 방지)
+      ranges.sort((a, b) => a[0] - b[0]);
+      const merged: [number, number][] = [];
+      for (const [s, e] of ranges) {
+        if (merged.length && merged[merged.length - 1][1] >= s) {
+          merged[merged.length - 1][1] = Math.max(merged[merged.length - 1][1], e);
+        } else {
+          merged.push([s, e]);
+        }
+      }
+
+      // ms 단위로 비가동 시간 계산 → 가동률(%), 비가동 시간(시간 단위)
+      const downtimeMs = merged.reduce((sum, [s, e]) => sum + (e - s), 0);
       const uptimePercent =
-        monthDays > 0
-          ? Math.max(0, Math.round(((monthDays - downtimeDays) / monthDays) * 100))
+        monthTotalMs > 0
+          ? Math.max(0, Math.round((1 - downtimeMs / monthTotalMs) * 100))
           : 100;
+      const downtimeHours = Math.round(downtimeMs / (1000 * 60 * 60));
 
       return {
         id: eq.id,
@@ -86,6 +116,7 @@ export async function GET() {
         ventStatus,
         cleaningStatus,
         uptimePercent,
+        downtimeHours,
         ventIntervalDays: eq.ventIntervalDays,
         cleaningIntervalDays: eq.cleaningIntervalDays,
       };
