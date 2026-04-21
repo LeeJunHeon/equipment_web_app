@@ -227,22 +227,24 @@ export default function Sidebar({
           </div>
 
           {/* 장비 설정 */}
-          <div className="mt-1">
-            <div className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-              관리자
+          {isAdmin && (
+            <div className="mt-1">
+              <div className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                관리자
+              </div>
+              <button
+                onClick={() => handleNav(onEquipmentSettingClick)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
+                  currentPage === "equipment-settings"
+                    ? "bg-blue-50 text-blue-600 font-semibold"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`}
+              >
+                <Settings size={18} className={currentPage === "equipment-settings" ? "text-blue-500" : "text-gray-400"} />
+                <span>장비 설정</span>
+              </button>
             </div>
-            <button
-              onClick={() => handleNav(onEquipmentSettingClick)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
-                currentPage === "equipment-settings"
-                  ? "bg-blue-50 text-blue-600 font-semibold"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              }`}
-            >
-              <Settings size={18} className={currentPage === "equipment-settings" ? "text-blue-500" : "text-gray-400"} />
-              <span>장비 설정</span>
-            </button>
-          </div>
+          )}
         </nav>
 
         {/* 사용자 정보 */}
@@ -253,7 +255,7 @@ export default function Sidebar({
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-gray-900 truncate">{userName}</p>
-              <p className="text-[10px] text-gray-400">관리자</p>
+              <p className="text-[10px] text-gray-400">{isAdmin ? "관리자" : "직원"}</p>
             </div>
             <button
               onClick={() => setShowLogoutConfirm(true)}
