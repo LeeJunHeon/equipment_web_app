@@ -39,6 +39,13 @@ export default function Sidebar({
     currentPage === "equipment"
   );
 
+  useEffect(() => {
+    if (window.innerWidth >= 1024) {
+      setHistoryOpen(true);
+      setEquipmentOpen(true);
+    }
+  }, []);
+
   const userName = session?.user?.name ?? "사용자";
   const initial = (() => {
     if (!userName || userName === "사용자") return "?";
