@@ -223,7 +223,7 @@ export default function DashboardPage({
             return (
               <div
                 key={eq.id}
-                className={`rounded-xl border bg-white p-4 shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
+                className={`rounded-xl border bg-white p-4 shadow-sm cursor-pointer hover:shadow-md transition-shadow flex flex-col ${
                   hasIssue
                     ? "border-l-4 border-l-red-400 border-t-gray-100 border-r-gray-100 border-b-gray-100"
                     : "border-gray-100"
@@ -306,7 +306,7 @@ export default function DashboardPage({
                 </div>
 
                 {/* 빠른 이력 등록 */}
-                <div className="flex gap-1.5 border-t border-gray-50 pt-2">
+                <div className="flex gap-1.5 border-t border-gray-50 pt-2 mt-auto">
                   <button
                     className="flex-1 rounded-lg border border-gray-200 py-2.5 text-[11px] font-medium text-gray-600 hover:bg-gray-50 transition-colors"
                     onClick={(e) => { e.stopPropagation(); onRegisterLog("repair", eq as unknown as Equipment); }}
