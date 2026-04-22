@@ -60,10 +60,10 @@ export default function Home() {
           )
           .map((e: { name: string; isVentTarget: boolean; isCleaningTarget?: boolean; ventStatus: string; cleaningStatus: string }) => {
             const issues: string[] = [];
-            if (e.isVentTarget && e.ventStatus === "overdue") issues.push("Vent 점검 필요");
-            else if (e.isVentTarget && e.ventStatus === "caution") issues.push("Vent 점검 임박");
-            if (e.isCleaningTarget !== false && e.cleaningStatus === "overdue") issues.push("클리닝 점검 필요");
-            else if (e.isCleaningTarget !== false && e.cleaningStatus === "caution") issues.push("클리닝 점검 임박");
+            if (e.isVentTarget && e.ventStatus === "overdue") issues.push("Vent 필요");
+            else if (e.isVentTarget && e.ventStatus === "caution") issues.push("Vent 임박");
+            if (e.isCleaningTarget !== false && e.cleaningStatus === "overdue") issues.push("클리닝 필요");
+            else if (e.isCleaningTarget !== false && e.cleaningStatus === "caution") issues.push("클리닝 임박");
             return { name: e.name, issues };
           });
         setPmIssueDetails(details);
