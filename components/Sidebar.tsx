@@ -13,6 +13,7 @@ interface SidebarProps {
   onEquipmentSettingClick: () => void;
   onNavigateHistory: (type: "repair" | "vent" | "cleaning") => void;
   isAdmin: boolean;
+  isDesktop?: boolean;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -25,6 +26,7 @@ export default function Sidebar({
   onEquipmentSettingClick,
   onNavigateHistory,
   isAdmin,
+  isDesktop = false,
   isOpen,
   onClose,
 }: SidebarProps) {
@@ -32,19 +34,15 @@ export default function Sidebar({
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [equipmentsLoaded, setEquipmentsLoaded] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [historyOpen, setHistoryOpen] = useState(
-    currentPage === "history-repair" || currentPage === "history-vent" || currentPage === "history-cleaning"
-  );
-  const [equipmentOpen, setEquipmentOpen] = useState(
-    currentPage === "equipment"
-  );
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [equipmentOpen, setEquipmentOpen] = useState(false);
 
   useEffect(() => {
-    if (window.innerWidth >= 1024) {
+    if (isDesktop) {
       setHistoryOpen(true);
       setEquipmentOpen(true);
     }
-  }, []);
+  }, [isDesktop]);
 
   const userName = session?.user?.name ?? "사용자";
   const initial = (() => {

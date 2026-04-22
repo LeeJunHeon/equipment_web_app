@@ -27,9 +27,13 @@ export default function Home() {
   const [pmIssueCount, setPmIssueCount] = useState(0);
   const [pmIssueDetails, setPmIssueDetails] = useState<{ name: string; issues: string[] }[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
-    if (window.innerWidth >= 1024) setSidebarOpen(true);
+    if (window.innerWidth >= 1024) {
+      setSidebarOpen(true);
+      setIsDesktop(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -114,6 +118,7 @@ export default function Home() {
         onEquipmentSettingClick={() => { setCurrentPage("equipment-settings"); setSelectedEquipment(null); }}
         onNavigateHistory={(type) => { setCurrentPage(`history-${type}` as "history-repair" | "history-vent" | "history-cleaning"); setSelectedEquipment(null); }}
         isAdmin={isAdmin}
+        isDesktop={isDesktop}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
