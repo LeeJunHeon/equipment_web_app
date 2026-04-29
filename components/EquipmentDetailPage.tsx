@@ -80,7 +80,7 @@ export default function EquipmentDetailPage({
 
   // 특정 수리 케이스의 일일 기록 로드
   async function loadEntries(logId: number) {
-    if (entriesMap[logId]) return; // 이미 로드됨
+    if (entriesMap[logId] !== undefined) return; // 이미 로드됨
     setLoadingEntries((prev) => new Set(prev).add(logId));
     try {
       const res = await fetch(`/api/logs/${logId}/entries`);
@@ -114,15 +114,25 @@ export default function EquipmentDetailPage({
   // 일일 기록 저장 후 해당 케이스 엔트리 새로고침
   async function handleEntrySaved() {
     if (entryTargetLogId === null) return;
-    // 캐시 무효화 후 다시 로드
-    setEntriesMap((prev) => {
-      const next = { ...prev };
-      delete next[entryTargetLogId];
-      return next;
-    });
-    await loadEntries(entryTargetLogId);
-    // 자동으로 펼침
-    setExpandedLogIds((prev) => new Set(prev).add(entryTargetLogId));
+    const targetId = entryTargetLogId; // stale closure 방지: 현재 값 캡처
+    setLoadingEntries((prev) => new Set(prev).add(targetId));
+    try {
+      const res = await fetch(`/api/logs/${targetId}/entries`);
+      if (res.ok) {
+        const data: LogEntry[] = await res.json();
+        // 직접 fetch 후 state 갱신 (loadEntries의 stale closure 우회)
+        setEntriesMap((prev) => ({ ...prev, [targetId]: data }));
+      }
+    } catch {
+      // 실패 시 기존 캐시 유지
+    } finally {
+      setLoadingEntries((prev) => {
+        const next = new Set(prev);
+        next.delete(targetId);
+        return next;
+      });
+    }
+    setExpandedLogIds((prev) => new Set(prev).add(targetId));
   }
 
   // 날짜별 그룹핑 헬퍼
@@ -464,12 +474,21 @@ export default function EquipmentDetailPage({
                     </span>
                   </>
                 ) : (
-                  <>
-                    <p className="text-[12px] text-gray-400">기록 없음</p>
-                    <span className="mt-1 inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">
-                      주기 초과
-                    </span>
-                  </>
+                  (equipment.ventIntervalDays ?? PM_CONFIG.ventIntervalDays) === 0 ? (
+                    <>
+                      <p className="text-[12px] text-gray-400">기록 없음</p>
+                      <span className="mt-1 inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">
+                        주기 없음
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-[12px] text-gray-400">기록 없음</p>
+                      <span className="mt-1 inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">
+                        주기 초과
+                      </span>
+                    </>
+                  )
                 );
               })()}
             </div>
@@ -491,12 +510,21 @@ export default function EquipmentDetailPage({
                       </span>
                     </>
                   ) : (
-                    <>
-                      <p className="text-[12px] text-gray-400">기록 없음</p>
-                      <span className="mt-1 inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">
-                        점검 필요
-                      </span>
-                    </>
+                    (equipment.cleaningIntervalDays ?? PM_CONFIG.cleaningIntervalDays) === 0 ? (
+                      <>
+                        <p className="text-[12px] text-gray-400">기록 없음</p>
+                        <span className="mt-1 inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">
+                          주기 없음
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-[12px] text-gray-400">기록 없음</p>
+                        <span className="mt-1 inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">
+                          점검 필요
+                        </span>
+                      </>
+                    )
                   );
                 })()}
               </div>
