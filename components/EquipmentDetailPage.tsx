@@ -37,6 +37,7 @@ export default function EquipmentDetailPage({
   // RepairEntryModal 상태
   const [showEntryModal, setShowEntryModal] = useState(false);
   const [entryTargetLogId, setEntryTargetLogId] = useState<number | null>(null);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   const [partsSummary, setPartsSummary] = useState<
     { name: string; count: number; totalQty: number; lastDate: string }[]
@@ -279,9 +280,25 @@ export default function EquipmentDetailPage({
                           <p className="text-gray-700 leading-relaxed">{entry.memo}</p>
                         )}
                         {entry.photos.length > 0 && (
-                          <div className="flex items-center gap-1 mt-0.5 text-gray-400">
-                            <ImageIcon size={11} />
-                            <span>사진 {entry.photos.length}장</span>
+                          <div className="flex flex-wrap gap-1.5 mt-1.5">
+                            {entry.photos.map((photo) => (
+                              <button
+                                key={photo.id}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setLightboxSrc(`/api/entry-photos/${photo.id}`);
+                                }}
+                                className="w-14 h-14 rounded-lg overflow-hidden border border-gray-200 hover:opacity-75 transition-opacity shrink-0"
+                                title={photo.fileName}
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={`/api/entry-photos/${photo.id}`}
+                                  alt={photo.fileName}
+                                  className="w-full h-full object-cover"
+                                />
+                              </button>
+                            ))}
                           </div>
                         )}
                       </div>
@@ -605,6 +622,30 @@ export default function EquipmentDetailPage({
           }}
           onSave={handleEntrySaved}
         />
+      )}
+
+      {/* 사진 라이트박스 */}
+      {lightboxSrc && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80"
+          onClick={() => setLightboxSrc(null)}
+        >
+          <div className="relative max-w-[90vw] max-h-[90vh]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={lightboxSrc}
+              alt="사진 크게 보기"
+              className="max-w-full max-h-[90vh] rounded-xl object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              onClick={() => setLightboxSrc(null)}
+              className="absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80 text-lg leading-none"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
