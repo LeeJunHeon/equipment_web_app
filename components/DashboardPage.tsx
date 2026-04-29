@@ -249,7 +249,7 @@ export default function DashboardPage({
                 </div>
 
                 {/* PM 상태 */}
-                <div className="space-y-1 mb-2">
+                <div className="space-y-1 mb-2 min-h-[48px]">
                   {eq.isVentTarget && (
                     <div className="flex items-center justify-between text-[11px]">
                       <div className="flex items-center gap-1 text-gray-500">
