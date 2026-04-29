@@ -112,6 +112,13 @@ export default function LogRegisterModal({
     fetchOptions();
   }, [isOpen, defaultEventType, defaultEquipmentId]);
 
+  // 세션이 로드된 후에도 operator 반영
+  useEffect(() => {
+    if (isOpen && session?.user?.name) {
+      setOperator(session.user.name);
+    }
+  }, [session, isOpen]);
+
   if (!isOpen) return null;
 
   const filteredEquipments = eventType === "vent" ? equipments.filter((e) => e.isVentTarget) : equipments;

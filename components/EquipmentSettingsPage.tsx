@@ -421,12 +421,12 @@ export default function EquipmentSettingsPage({ isAdmin = false }: EquipmentSett
                   <div className="flex flex-wrap gap-2 text-[11px]">
                     {eq.isVentTarget && (
                       <span className="flex items-center gap-1 rounded-full bg-blue-100 text-blue-700 px-2 py-0.5 font-medium">
-                        <Wind size={10} /> Vent 대상{(eq.ventIntervalDays ?? 30) > 0 ? ` · ${eq.ventIntervalDays ?? 30}일 주기` : ""}
+                        <Wind size={10} /> Vent 대상{(eq.ventIntervalDays ?? 30) > 0 ? ` · ${eq.ventIntervalDays ?? 30}일 주기` : " · 주기 없음"}
                       </span>
                     )}
                     {eq.isCleaningTarget !== false ? (
                       <span className="flex items-center gap-1 rounded-full bg-green-100 text-green-700 px-2 py-0.5 font-medium">
-                        <Sparkles size={10} /> 클리닝 대상{(eq.cleaningIntervalDays ?? 14) > 0 ? ` · ${eq.cleaningIntervalDays ?? 14}일 주기` : ""}
+                        <Sparkles size={10} /> 클리닝 대상{(eq.cleaningIntervalDays ?? 14) > 0 ? ` · ${eq.cleaningIntervalDays ?? 14}일 주기` : " · 주기 없음"}
                       </span>
                     ) : (
                       <span className="flex items-center gap-1 rounded-full bg-gray-100 text-gray-500 px-2 py-0.5 font-medium">

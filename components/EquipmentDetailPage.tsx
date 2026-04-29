@@ -474,6 +474,7 @@ export default function EquipmentDetailPage({
       {activeTab === "maintenance" && (
         <div className="space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {equipment.isVentTarget && (
             <div className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
               <div className="flex items-center gap-2 mb-1">
                 <Wind size={14} className="text-blue-500" />
@@ -509,6 +510,7 @@ export default function EquipmentDetailPage({
                 );
               })()}
             </div>
+            )}
             {equipment.isCleaningTarget !== false && (
               <div className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
                 <div className="flex items-center gap-2 mb-1">

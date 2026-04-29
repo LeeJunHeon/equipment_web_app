@@ -131,7 +131,18 @@ export default function LogDetailModal({ isOpen, onClose, onSave, logId, logs, i
               {log.eventType === "repair" && (
                 <>
                   <div className="grid grid-cols-[100px_1fr] border-b border-gray-50"><span className="bg-gray-50 px-3 py-2 font-medium text-gray-500">증상</span><span className="px-3 py-2 text-gray-800">{log.symptom || "-"}</span></div>
-                  <div className="grid grid-cols-[100px_1fr] border-b border-gray-50"><span className="bg-gray-50 px-3 py-2 font-medium text-gray-500">교체 부품</span><span className="px-3 py-2 text-gray-800">{log.replacedParts || "-"}</span></div>
+                  <div className="grid grid-cols-[100px_1fr] border-b border-gray-50"><span className="bg-gray-50 px-3 py-2 font-medium text-gray-500">교체 부품</span><span className="px-3 py-2 text-gray-800">
+                    {log.replacedParts
+                      ? (() => {
+                          try {
+                            const parts = JSON.parse(log.replacedParts) as { name: string; qty: number }[];
+                            return parts.map((p) => `${p.name} x${p.qty}개`).join(", ");
+                          } catch {
+                            return log.replacedParts;
+                          }
+                        })()
+                      : "-"}
+                  </span></div>
                   {log.isExternal && (<div className="grid grid-cols-[100px_1fr] border-b border-gray-50"><span className="bg-gray-50 px-3 py-2 font-medium text-gray-500">외부 업체</span><span className="px-3 py-2 text-gray-800">{log.vendorName || "-"}</span></div>)}
                   {log.status === "완료" && (
                     <div className="grid grid-cols-[100px_1fr] border-b border-gray-50">
