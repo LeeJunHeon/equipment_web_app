@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X, Wrench, Wind, Trash2, Plus } from "lucide-react";
+import { useSession } from "next-auth/react";
 import type { EventType, Equipment, StatusType } from "@/lib/types";
 import PhotoUploader from "@/components/ui/PhotoUploader";
 import VoiceInput from "@/components/ui/VoiceInput";
@@ -21,6 +22,7 @@ export default function LogRegisterModal({
   defaultEventType,
   defaultEquipmentId,
 }: LogRegisterModalProps) {
+  const { data: session } = useSession();
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -28,7 +30,7 @@ export default function LogRegisterModal({
 
   const [eventType, setEventType] = useState<EventType>("repair");
   const [equipmentId, setEquipmentId] = useState("");
-  const [operator, setOperator] = useState("이준헌");
+  const [operator, setOperator] = useState("");
   const [occurredAt, setOccurredAt] = useState("");
   const [description, setDescription] = useState("");
   const [symptom, setSymptom] = useState("");
@@ -54,7 +56,7 @@ export default function LogRegisterModal({
     if (!isOpen) {
       setEventType("repair");
       setEquipmentId("");
-      setOperator("이준헌");
+      setOperator(session?.user?.name ?? "");
       setOccurredAt("");
       setDescription("");
       setSymptom("");
@@ -84,6 +86,7 @@ export default function LogRegisterModal({
     setNewPartQty(1);
     if (defaultEventType) setEventType(defaultEventType);
     if (defaultEquipmentId) setEquipmentId(String(defaultEquipmentId));
+    if (session?.user?.name) setOperator(session.user.name);
     async function fetchEquipments() {
       try {
         const res = await fetch("/api/equipment");
@@ -198,12 +201,21 @@ export default function LogRegisterModal({
           {error && <div className="rounded-lg bg-red-50 px-3 py-2 text-[12px] text-red-600">{error}</div>}
 
           <div>
-            <label className="mb-1.5 block text-[11px] font-semibold text-gray-500">유형 선택</label>
-            <div className="flex gap-2">
-              {typeButtons.map((btn) => (
-                <button key={btn.type} onClick={() => setEventType(btn.type)} className={`flex-1 rounded-lg border py-2 text-[12px] font-medium transition-colors ${eventType === btn.type ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}>{btn.label}</button>
-              ))}
-            </div>
+            <label className="mb-1.5 block text-[11px] font-semibold text-gray-500">유형</label>
+            {defaultEventType ? (
+              <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                <span className="text-[13px] font-semibold text-gray-800">
+                  {defaultEventType === "repair" ? "수리🔧" : defaultEventType === "vent" ? "Vent💨" : "클리닝🧹"}
+                </span>
+                <span className="text-[11px] text-gray-400">(유형 고정)</span>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                {typeButtons.map((btn) => (
+                  <button key={btn.type} onClick={() => setEventType(btn.type)} className={`flex-1 rounded-lg border py-2 text-[12px] font-medium transition-colors ${eventType === btn.type ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}>{btn.label}</button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div>
@@ -217,7 +229,12 @@ export default function LogRegisterModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="mb-1.5 block text-[11px] font-semibold text-gray-500">담당자</label>
-              <select value={operator} onChange={(e) => setOperator(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"><option>이준헌</option><option>박민준</option></select>
+              <input
+                type="text"
+                value={operator}
+                readOnly
+                className="w-full rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-[12px] text-gray-700 cursor-not-allowed"
+              />
             </div>
             <div>
               <label className="mb-1.5 block text-[11px] font-semibold text-gray-500">발생 일시</label>
