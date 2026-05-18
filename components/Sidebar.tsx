@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Home, Wrench, X, LogOut, Settings, Wind, Sparkles } from "lucide-react";
+import { Home, Wrench, X, LogOut, Settings, ChevronDown, ChevronRight, FileText, Wind, Sparkles, ArrowLeft } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import type { Equipment } from "@/lib/types";
 
@@ -82,15 +82,20 @@ export default function Sidebar({
           }
         `}
       >
+        {/* 포털로 이동 */}
+        <a
+          href="https://vanam.synology.me"
+          className="flex items-center gap-2 px-5 py-3 border-b border-gray-100 text-blue-600 hover:bg-blue-50 transition-colors"
+          style={{ textDecoration: "none" }}
+        >
+          <ArrowLeft size={16} />
+          <span className="text-sm font-semibold">VanaM 포털</span>
+        </a>
+
         {/* 로고 */}
         <div className="px-5 py-5 border-b border-gray-100">
           <div className="flex items-center justify-between">
-            <a
-              href="https://vanam.synology.me"
-              title="포털로 이동"
-              className="flex items-center gap-2.5 -mx-2 px-2 py-1 rounded-lg hover:bg-gray-50 transition-colors"
-              style={{ textDecoration: "none" }}
-            >
+            <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
                 <Wrench size={16} className="text-white" />
               </div>
@@ -98,7 +103,7 @@ export default function Sidebar({
                 <h1 className="text-sm font-bold text-gray-900">장비 관리</h1>
                 <p className="text-[10px] text-gray-400">Equipment Manager</p>
               </div>
-            </a>
+            </div>
             <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 lg:hidden">
               <X size={18} className="text-gray-400" />
             </button>
