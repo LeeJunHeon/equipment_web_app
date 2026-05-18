@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Home, Wrench, X, LogOut, Settings, ChevronDown, ChevronRight, FileText, Wind, Sparkles } from "lucide-react";
+import { Home, Wrench, X, LogOut, Settings, Wind, Sparkles } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import type { Equipment } from "@/lib/types";
 
@@ -26,7 +26,6 @@ export default function Sidebar({
   onEquipmentSettingClick,
   onNavigateHistory,
   isAdmin,
-  isDesktop = false,
   isOpen,
   onClose,
 }: SidebarProps) {
@@ -34,15 +33,6 @@ export default function Sidebar({
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [equipmentsLoaded, setEquipmentsLoaded] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [historyOpen, setHistoryOpen] = useState(false);
-  const [equipmentOpen, setEquipmentOpen] = useState(false);
-
-  useEffect(() => {
-    if (isDesktop) {
-      setHistoryOpen(true);
-      setEquipmentOpen(true);
-    }
-  }, [isDesktop]);
 
   const userName = session?.user?.name ?? "사용자";
   const initial = (() => {
@@ -95,7 +85,12 @@ export default function Sidebar({
         {/* 로고 */}
         <div className="px-5 py-5 border-b border-gray-100">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
+            <a
+              href="https://vanam.synology.me"
+              title="포털로 이동"
+              className="flex items-center gap-2.5 -mx-2 px-2 py-1 rounded-lg hover:bg-gray-50 transition-colors"
+              style={{ textDecoration: "none" }}
+            >
               <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
                 <Wrench size={16} className="text-white" />
               </div>
@@ -103,7 +98,7 @@ export default function Sidebar({
                 <h1 className="text-sm font-bold text-gray-900">장비 관리</h1>
                 <p className="text-[10px] text-gray-400">Equipment Manager</p>
               </div>
-            </div>
+            </a>
             <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 lg:hidden">
               <X size={18} className="text-gray-400" />
             </button>
@@ -130,105 +125,86 @@ export default function Sidebar({
             )}
           </button>
 
-          {/* 이력 조회 아코디언 */}
-          <div className="mt-1">
+          {/* 이력 조회 */}
+          <div className="mt-3">
+            <div className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+              이력 조회
+            </div>
             <button
-              onClick={() => setHistoryOpen((v) => !v)}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+              onClick={() => handleNav(() => onNavigateHistory("repair"))}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
+                currentPage === "history-repair"
+                  ? "bg-blue-50 text-blue-600 font-semibold"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              }`}
             >
-              <FileText size={18} className="text-gray-400" />
-              <span className="flex-1 text-left">이력 조회</span>
-              {historyOpen ? <ChevronDown size={15} className="text-gray-400" /> : <ChevronRight size={15} className="text-gray-400" />}
+              <Wrench size={18} className="text-red-400" />
+              <span>수리 이력</span>
             </button>
-            {historyOpen && (
-              <div className="ml-4 pl-3 border-l border-gray-100 space-y-0.5 mt-0.5">
-                <button
-                  onClick={() => handleNav(() => onNavigateHistory("repair"))}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] transition-all ${
-                    currentPage === "history-repair"
-                      ? "bg-blue-50 text-blue-600 font-semibold"
-                      : "text-gray-600 hover:bg-gray-50"
-                  }`}
-                >
-                  <Wrench size={14} className="text-red-400" />
-                  수리 이력
-                </button>
-                <button
-                  onClick={() => handleNav(() => onNavigateHistory("vent"))}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] transition-all ${
-                    currentPage === "history-vent"
-                      ? "bg-blue-50 text-blue-600 font-semibold"
-                      : "text-gray-600 hover:bg-gray-50"
-                  }`}
-                >
-                  <Wind size={14} className="text-blue-400" />
-                  Vent 이력
-                </button>
-                <button
-                  onClick={() => handleNav(() => onNavigateHistory("cleaning"))}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] transition-all ${
-                    currentPage === "history-cleaning"
-                      ? "bg-blue-50 text-blue-600 font-semibold"
-                      : "text-gray-600 hover:bg-gray-50"
-                  }`}
-                >
-                  <Sparkles size={14} className="text-green-400" />
-                  클리닝 이력
-                </button>
-              </div>
-            )}
+            <button
+              onClick={() => handleNav(() => onNavigateHistory("vent"))}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
+                currentPage === "history-vent"
+                  ? "bg-blue-50 text-blue-600 font-semibold"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              }`}
+            >
+              <Wind size={18} className="text-blue-400" />
+              <span>Vent 이력</span>
+            </button>
+            <button
+              onClick={() => handleNav(() => onNavigateHistory("cleaning"))}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
+                currentPage === "history-cleaning"
+                  ? "bg-blue-50 text-blue-600 font-semibold"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              }`}
+            >
+              <Sparkles size={18} className="text-green-400" />
+              <span>클리닝 이력</span>
+            </button>
           </div>
 
-          {/* 장비 아코디언 */}
-          <div className="mt-1">
-            <button
-              onClick={() => setEquipmentOpen((v) => !v)}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
-            >
-              <Wrench size={18} className="text-gray-400" />
-              <span className="flex-1 text-left">장비</span>
-              <div className="flex items-center gap-1.5">
-                {totalUnresolved > 0 && !equipmentOpen && (
-                  <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-                    {totalUnresolved}
-                  </span>
-                )}
-                {equipmentOpen ? <ChevronDown size={15} className="text-gray-400" /> : <ChevronRight size={15} className="text-gray-400" />}
-              </div>
-            </button>
-            {equipmentOpen && (
-              <div className="ml-4 pl-3 border-l border-gray-100 space-y-0.5 mt-0.5">
-                {!equipmentsLoaded && (
-                  <div className="space-y-1 px-1">
-                    {[...Array(3)].map((_, i) => (
-                      <div key={i} className="h-8 bg-gray-100 rounded-xl animate-pulse" />
-                    ))}
-                  </div>
-                )}
-                {equipmentsLoaded && equipments.length === 0 && (
-                  <div className="px-3 py-2 text-[11px] text-gray-400">등록된 장비가 없습니다.</div>
-                )}
-                {equipments.map((eq) => {
-                  const isActive = currentPage === "equipment" && selectedEquipmentId === eq.id;
-                  return (
-                    <button
-                      key={eq.id}
-                      onClick={() => handleNav(() => onNavigateEquipment(eq))}
-                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] transition-all ${
-                        isActive ? "bg-blue-50 text-blue-600 font-semibold" : "text-gray-600 hover:bg-gray-50"
-                      }`}
-                    >
-                      <span className="flex-1 text-left truncate">{eq.name}</span>
-                      {eq.unresolvedRepairCount > 0 && (
-                        <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-                          {eq.unresolvedRepairCount}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+          {/* 장비 */}
+          <div className="mt-3">
+            <div className="flex items-center justify-between px-3 pb-1 pt-2">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">장비</span>
+              {totalUnresolved > 0 && (
+                <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                  {totalUnresolved}
+                </span>
+              )}
+            </div>
+            {!equipmentsLoaded && (
+              <div className="space-y-1 px-1">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-9 bg-gray-100 rounded-xl animate-pulse" />
+                ))}
               </div>
             )}
+            {equipmentsLoaded && equipments.length === 0 && (
+              <div className="px-3 py-2 text-[11px] text-gray-400">등록된 장비가 없습니다.</div>
+            )}
+            {equipments.map((eq) => {
+              const isActive = currentPage === "equipment" && selectedEquipmentId === eq.id;
+              return (
+                <button
+                  key={eq.id}
+                  onClick={() => handleNav(() => onNavigateEquipment(eq))}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
+                    isActive ? "bg-blue-50 text-blue-600 font-semibold" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
+                >
+                  <Wrench size={18} className={isActive ? "text-blue-500" : "text-gray-400"} />
+                  <span className="flex-1 text-left truncate">{eq.name}</span>
+                  {eq.unresolvedRepairCount > 0 && (
+                    <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                      {eq.unresolvedRepairCount}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
 
           {/* 장비 설정 */}
