@@ -19,8 +19,12 @@ const CONFIG = {
 };
 
 function formatDate(dateStr: string) {
-  const d = new Date(dateStr);
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+  // DB occurred_at은 KST 벽시계 문자열(타임존 없음)이므로
+  // Date 객체로 파싱하지 않고 문자열을 직접 분해하여 타임존 변환을 방지한다.
+  const m = dateStr.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+  if (!m) return dateStr;
+  const [, y, mo, d, h, mi] = m;
+  return `${y}-${mo}-${d} ${h}:${mi}`;
 }
 
 export default function HistoryPage({ eventType, refreshKey, onRefresh, isAdmin = false }: HistoryPageProps) {

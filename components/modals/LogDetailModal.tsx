@@ -21,7 +21,17 @@ const eventBadge: Record<EventType, { label: string; cls: string }> = {
 
 function formatDate(dateStr: string | null | undefined) {
   if (!dateStr) return "-";
-  const d = new Date(dateStr);
+  // occurred_at은 KST 벽시계 문자열(타임존 없음)이므로 문자열을 직접 분해해 표시.
+  // completedAt은 timestamptz(UTC)이므로 별도 처리한다.
+  const m = dateStr.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+  if (!m) return dateStr;
+  const [, y, mo, d, h, mi] = m;
+  return `${y}-${mo}-${d} ${h}:${mi}`;
+}
+
+function formatTzDate(dateStr: string | null | undefined) {
+  if (!dateStr) return "-";
+  const d = new Date(dateStr); // timestamptz → 절대시각, 브라우저 KST로 표시
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");
@@ -147,7 +157,7 @@ export default function LogDetailModal({ isOpen, onClose, onSave, logId, logs, i
                   {log.status === "완료" && (
                     <div className="grid grid-cols-[100px_1fr] border-b border-gray-50">
                       <span className="bg-gray-50 px-3 py-2 font-medium text-gray-500">완료 일시</span>
-                      <span className="px-3 py-2 text-gray-800">{formatDate(log.completedAt)}</span>
+                      <span className="px-3 py-2 text-gray-800">{formatTzDate(log.completedAt)}</span>
                     </div>
                   )}
                 </>
