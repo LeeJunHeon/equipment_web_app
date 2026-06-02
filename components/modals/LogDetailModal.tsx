@@ -51,7 +51,7 @@ export default function LogDetailModal({ isOpen, onClose, onSave, logId, logs, i
   if (!log) return null;
 
   const badge = eventBadge[log.eventType];
-  const relatedLogs = logs.filter((l) => l.equipmentId === log.equipmentId)
+  const relatedLogs = logs.filter((l) => l.equipmentId === log.equipmentId && l.id !== log.id)
     .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
     .slice(0, 5);
 
@@ -218,7 +218,13 @@ export default function LogDetailModal({ isOpen, onClose, onSave, logId, logs, i
                       <div className="flex-1">
                         <div className="flex items-center gap-1.5">
                           <span className={`rounded px-1.5 py-0.5 text-[9px] font-medium ${rlBadge.cls}`}>{rlBadge.label}</span>
-                          <span className="text-[11px] text-gray-700 line-clamp-1">{rl.description}</span>
+                          <span className="text-[11px] text-gray-700 line-clamp-1">
+                            {rl.eventType === "repair"
+                              ? [rl.symptom, rl.description].filter(Boolean).join(" / ") || "—"
+                              : rl.eventType === "vent"
+                              ? [rl.ventReason, rl.description].filter(Boolean).join(" / ") || "—"
+                              : [rl.cleaningType, rl.description].filter(Boolean).join(" / ") || "—"}
+                          </span>
                         </div>
                         <p className="text-[10px] text-gray-400">{formatDate(rl.occurredAt)} · {rl.operator}</p>
                       </div>
