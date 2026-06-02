@@ -51,7 +51,13 @@ export default function LogDetailModal({ isOpen, onClose, onSave, logId, logs, i
   if (!log) return null;
 
   const badge = eventBadge[log.eventType];
-  const relatedLogs = logs.filter((l) => l.equipmentId === log.equipmentId && l.id !== log.id)
+  const relatedLogs = logs
+    .filter(
+      (l) =>
+        l.equipmentId === log.equipmentId &&
+        l.id !== log.id &&
+        l.occurredAt.localeCompare(log.occurredAt) < 0
+    )
     .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
     .slice(0, 5);
 
@@ -165,8 +171,6 @@ export default function LogDetailModal({ isOpen, onClose, onSave, logId, logs, i
               {log.eventType === "vent" && (
                 <>
                   <div className="grid grid-cols-[100px_1fr] border-b border-gray-50"><span className="bg-gray-50 px-3 py-2 font-medium text-gray-500">Vent 사유</span><span className="px-3 py-2 text-gray-800">{log.ventReason || "-"}</span></div>
-                  <div className="grid grid-cols-[100px_1fr] border-b border-gray-50"><span className="bg-gray-50 px-3 py-2 font-medium text-gray-500">도달 압력</span><span className="px-3 py-2 text-gray-800">{log.finalPressure || "-"}</span></div>
-                  <div className="grid grid-cols-[100px_1fr] border-b border-gray-50"><span className="bg-gray-50 px-3 py-2 font-medium text-gray-500">Pump-down</span><span className="px-3 py-2 text-gray-800">{formatDate(log.pumpedDownAt)}</span></div>
                 </>
               )}
               {log.eventType === "cleaning" && (
@@ -208,8 +212,11 @@ export default function LogDetailModal({ isOpen, onClose, onSave, logId, logs, i
             )}
 
             <div>
-              <p className="mb-2 text-[11px] font-semibold text-gray-500">최근 이력 ({log.equipmentName})</p>
+              <p className="mb-2 text-[11px] font-semibold text-gray-500">과거 이력 ({log.equipmentName})</p>
               <div className="space-y-0">
+                {relatedLogs.length === 0 && (
+                  <p className="text-[11px] text-gray-400">이전 이력이 없습니다.</p>
+                )}
                 {relatedLogs.map((rl) => {
                   const rlBadge = eventBadge[rl.eventType];
                   return (

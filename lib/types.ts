@@ -38,8 +38,6 @@ export interface EquipmentLog {
   isExternal?: boolean;
   vendorName?: string | null;
   ventReason?: string | null;
-  finalPressure?: string | null;
-  pumpedDownAt?: string | null;
   cleaningType?: string | null;
   nextScheduledAt?: string | null;
   completedAt?: string | null;
