@@ -140,7 +140,13 @@ export default function LogRegisterModal({
       const body: Record<string, unknown> = {
         equipmentId: Number(equipmentId),
         eventType,
-        occurredAt: occurredAt || new Date().toISOString(),
+        occurredAt: occurredAt || (() => {
+          // 발생일시 미입력 시: 현재 KST 벽시계를 datetime-local 형식("YYYY-MM-DDTHH:mm")으로 생성
+          // toISOString()은 UTC라 KST 벽시계 컬럼에 9시간 어긋난 값이 저장되는 버그가 있었음
+          const now = new Date();
+          const kst = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+          return kst.toISOString().slice(0, 16);
+        })(),
         operator,
         description,
         status: eventType === "repair" ? repairStatus : "완료",
