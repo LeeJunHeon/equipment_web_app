@@ -7,7 +7,7 @@ import { timingSafeEqual } from "crypto";
 // 신원: x-acting-user-email 필수(감사용), x-acting-user-name 선택(작업자명).
 // ⚠️ next-auth 세션 우회 안 함. 항상 머신 토큰 실검증.
 export type EquipWriteAuthResult =
-  | { ok: true; actingEmail: string; actingName: string }
+  | { ok: true; actingEmail: string }
   | { ok: false; response: NextResponse };
 
 function safeStringEqual(a: string, b: string): boolean {
@@ -39,8 +39,5 @@ export function requireEquipWriteAuth(request: Request): EquipWriteAuthResult {
     };
   }
 
-  const headerName = request.headers.get("x-acting-user-name")?.trim() || "";
-  const actingName = headerName || actingEmail.split("@")[0];
-
-  return { ok: true, actingEmail, actingName };
+  return { ok: true, actingEmail };
 }

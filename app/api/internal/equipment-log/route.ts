@@ -85,7 +85,7 @@ export async function POST(request: Request) {
         equipmentId,
         eventType,
         occurredAt,
-        operator: auth.actingName.slice(0, 50), // 헤더 신원에서 (body 값 무시)
+        operator: (text(body.operatorName) ?? auth.actingEmail.split("@")[0]).slice(0, 50), // 표시명은 body(UTF-8). 없으면 이메일 앞부분
         description: text(body.description),
         status,
         symptom: isRepair ? text(body.symptom) : null,
