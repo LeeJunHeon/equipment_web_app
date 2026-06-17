@@ -14,6 +14,7 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       AUTH_TRUST_HOST: "true"
+      EQUIP_MCP_TOKEN: ${EQUIP_MCP_TOKEN}
     networks:
       - vanam-db-net
 
