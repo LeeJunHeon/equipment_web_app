@@ -74,7 +74,7 @@ export const OPERATION_SCHEMAS: OperationSchema[] = [
     app: "equipment",
     fields: [
       { name: "equipmentId", label: "장비",      type: "id_ref", required: true, lookup: "list_equipment" },
-      { name: "ventReason",  label: "벤트 사유", type: "text",   required: false },
+      { name: "ventReason",  label: "벤트 사유", type: "enum",   required: false },
       { name: "description", label: "상세 내용", type: "text",   required: false },
       { name: "occurredAt",  label: "발생일시",    type: "date",   required: false },
     ],
@@ -93,7 +93,7 @@ export const OPERATION_SCHEMAS: OperationSchema[] = [
     app: "equipment",
     fields: [
       { name: "equipmentId",     label: "장비",        type: "id_ref", required: true, lookup: "list_equipment" },
-      { name: "cleaningType",    label: "클리닝 종류", type: "text",   required: false },
+      { name: "cleaningType",    label: "클리닝 종류", type: "enum",   required: false },
       { name: "description",     label: "상세 내용",   type: "text",   required: false },
       { name: "nextScheduledAt", label: "다음 예정일", type: "date",   required: false },
       { name: "occurredAt",      label: "발생일시",      type: "date",   required: false },
