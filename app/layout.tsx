@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SessionProvider } from "next-auth/react";
+import BasePathFetch from "@/components/BasePathFetch";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -19,7 +20,10 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full">
-        <SessionProvider>{children}</SessionProvider>
+        <SessionProvider>
+          <BasePathFetch />
+          {children}
+        </SessionProvider>
       </body>
     </html>
   );
