@@ -2,14 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/auth-utils";
 
-// CORS 헤더 — 포털에서만 GET 호출 허용
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "https://vanam.synology.me",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-  "Access-Control-Allow-Credentials": "true",
-};
-
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -37,12 +29,12 @@ export async function GET(request: NextRequest) {
       equipment: undefined,
     }));
 
-    return NextResponse.json(result, { headers: corsHeaders });
+    return NextResponse.json(result);
   } catch (error) {
     console.error("GET /api/logs error:", error);
     return NextResponse.json(
       { error: "이력 조회 실패" },
-      { status: 500, headers: corsHeaders }
+      { status: 500 }
     );
   }
 }
@@ -171,9 +163,4 @@ export async function DELETE(request: NextRequest) {
     console.error("DELETE /api/logs error:", error);
     return NextResponse.json({ error: "이력 삭제 실패" }, { status: 500 });
   }
-}
-
-// CORS preflight 요청 처리 (GET만 허용)
-export async function OPTIONS() {
-  return new Response(null, { status: 204, headers: corsHeaders });
 }

@@ -2,14 +2,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getPmStatus } from "@/lib/pmConfig";
 
-// CORS 헤더 — 포털에서만 호출 허용
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "https://vanam.synology.me",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-  "Access-Control-Allow-Credentials": "true",
-};
-
 export async function GET() {
   try {
     const now = new Date();
@@ -137,19 +129,13 @@ export async function GET() {
     ).length;
 
     return NextResponse.json(
-      { equipments: result, totalUnresolved, pmIssueCount },
-      { headers: corsHeaders }
+      { equipments: result, totalUnresolved, pmIssueCount }
     );
   } catch (error) {
     console.error("GET /api/dashboard error:", error);
     return NextResponse.json(
       { error: "대시보드 데이터 조회 실패" },
-      { status: 500, headers: corsHeaders }
+      { status: 500 }
     );
   }
-}
-
-// CORS preflight 요청 처리
-export async function OPTIONS() {
-  return new Response(null, { status: 204, headers: corsHeaders });
 }
