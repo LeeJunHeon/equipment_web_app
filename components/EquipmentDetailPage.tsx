@@ -5,6 +5,7 @@ import { Wrench, Wind, Sparkles, Plus, ChevronDown, ChevronRight, ImageIcon, Pac
 import type { Equipment, EquipmentLog, LogEntry } from "@/lib/types";
 import RepairEntryModal from "@/components/modals/RepairEntryModal";
 import { getPmStatus, getPmStatusLabel, getPmStatusColor, PM_CONFIG } from "@/lib/pmConfig";
+import { assetPath } from "@/lib/asset-path";
 
 type Tab = "repair" | "maintenance";
 
@@ -286,14 +287,14 @@ export default function EquipmentDetailPage({
                                 key={photo.id}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setLightboxSrc(`/api/entry-photos/${photo.id}`);
+                                  setLightboxSrc(assetPath(`/api/entry-photos/${photo.id}`));
                                 }}
                                 className="w-14 h-14 rounded-lg overflow-hidden border border-gray-200 hover:opacity-75 transition-opacity shrink-0"
                                 title={photo.fileName}
                               >
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
-                                  src={`/api/entry-photos/${photo.id}`}
+                                  src={assetPath(`/api/entry-photos/${photo.id}`)}
                                   alt={photo.fileName}
                                   className="w-full h-full object-cover"
                                 />

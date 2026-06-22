@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, Trash2 as TrashIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import type { EventType, EquipmentLog } from "@/lib/types";
+import { assetPath } from "@/lib/asset-path";
 
 interface LogDetailModalProps {
   isOpen: boolean;
@@ -194,7 +195,7 @@ export default function LogDetailModal({ isOpen, onClose, onSave, logId, logs, i
                     <div key={photo.id} className="group relative aspect-square rounded-lg overflow-hidden bg-gray-100">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={`/api/photos/${photo.id}`}
+                        src={assetPath(`/api/photos/${photo.id}`)}
                         alt={photo.fileName}
                         className="h-full w-full object-cover cursor-pointer"
                         onClick={() => openLightbox(idx)}
@@ -280,7 +281,7 @@ export default function LogDetailModal({ isOpen, onClose, onSave, logId, logs, i
           <div onClick={(e) => e.stopPropagation()} className="relative max-h-[90vh] max-w-[90vw]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={`/api/photos/${visiblePhotos[lightboxIndex].id}`}
+              src={assetPath(`/api/photos/${visiblePhotos[lightboxIndex].id}`)}
               alt={visiblePhotos[lightboxIndex].fileName}
               className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
             />
