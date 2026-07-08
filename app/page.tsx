@@ -21,18 +21,18 @@ export default function Home() {
 
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedLogId, setSelectedLogId] = useState<number | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [logs, setLogs] = useState<EquipmentLog[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [pmIssueCount, setPmIssueCount] = useState(0);
   const [pmIssueDetails, setPmIssueDetails] = useState<{ name: string; issues: string[] }[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(true);
 
   useEffect(() => {
-    if (window.innerWidth >= 1024) {
-      setSidebarOpen(true);
-      setIsDesktop(true);
+    if (window.innerWidth < 1024) {
+      setSidebarOpen(false);
+      setIsDesktop(false);
     }
   }, []);
 
