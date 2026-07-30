@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SessionProvider } from "next-auth/react";
 import BasePathFetch from "@/components/BasePathFetch";
+import PortalChatLauncher from "@/components/PortalChatLauncher";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -25,6 +26,7 @@ export default function RootLayout({
           <BasePathFetch />
           {children}
         </SessionProvider>
+        <PortalChatLauncher />
       </body>
     </html>
   );
