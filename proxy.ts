@@ -61,6 +61,15 @@ export default auth((req: NextRequest & { auth: any }) => {
     return NextResponse.next();
   }
 
+  // 정적 자산(파비콘/아이콘/manifest 등)은 인증 없이 통과시킨다.
+  // 브라우저는 아이콘·manifest를 자격증명(쿠키) 없이 요청하므로,
+  // 인증 redirect가 끼면 이미지 대신 로그인 HTML이 와서 아이콘이 깨진다.
+  // (경영지원·hr-web과 동일한 규칙. 단 /api/ 블록 뒤에 두어
+  //  확장자로 끝나는 API 경로가 인증을 우회하는 일이 없도록 한다)
+  if (/\.(?:json|js|png|jpg|jpeg|gif|svg|ico|webmanifest)$/.test(pathname)) {
+    return NextResponse.next();
+  }
+
   // 페이지 라우트: 미인증 시 포털 로그인으로 리다이렉트
   // (장비관리 자체 /login 없음, 로그인은 포털에서 담당)
   if (!req.auth?.user) {
