@@ -7,6 +7,13 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "장비 관리",
   description: "VanaM 장비 관리 시스템",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png" },
+    ],
+    apple: "/icon.png",
+  },
 };
 
 export default function RootLayout({
