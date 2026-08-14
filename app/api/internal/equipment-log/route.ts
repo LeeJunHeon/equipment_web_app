@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireEquipWriteAuth } from "@/lib/internal-write-auth";
+import { nowKst, parseKst } from "@/lib/kst";
 
 export const dynamic = "force-dynamic";
 
@@ -67,7 +68,7 @@ export async function POST(request: Request) {
     }
 
     // 발생일시: 미입력 시 현재시각 (특정 날짜의 KST 처리는 포털 연결 단계에서 정교화)
-    const occurredAt = body.occurredAt ? new Date(body.occurredAt) : new Date();
+    const occurredAt = body.occurredAt ? parseKst(body.occurredAt) : nowKst();
     if (isNaN(occurredAt.getTime())) {
       return NextResponse.json({ error: "유효한 발생일시가 아닙니다." }, { status: 400 });
     }
@@ -88,6 +89,9 @@ export async function POST(request: Request) {
         operator: (text(body.operatorName) ?? auth.actingEmail.split("@")[0]).slice(0, 50), // 표시명은 body(UTF-8). 없으면 이메일 앞부분
         description: text(body.description),
         status,
+        // 완료 상태로 등록되는 건(수리 완료, vent, cleaning)은 완료 일시를 함께 기록.
+        // 챗봇은 별도 완료 일시를 받지 않으므로 발생일시를 그대로 쓴다.
+        completedAt: status === "완료" ? occurredAt : null,
         symptom: isRepair ? text(body.symptom) : null,
         replacedParts: isRepair ? text(body.replacedParts) : null,
         isExternal,
@@ -108,6 +112,7 @@ export async function POST(request: Request) {
         status: log.status,
         operator: log.operator,
         occurredAt: log.occurredAt.toISOString(),
+        completedAt: log.completedAt ? log.completedAt.toISOString() : null,
       },
       { status: 201 }
     );

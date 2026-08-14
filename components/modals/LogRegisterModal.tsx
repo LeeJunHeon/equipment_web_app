@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import type { EventType, Equipment, StatusType } from "@/lib/types";
 import PhotoUploader from "@/components/ui/PhotoUploader";
 import VoiceInput from "@/components/ui/VoiceInput";
+import { nowKst } from "@/lib/kst";
 
 interface LogRegisterModalProps {
   isOpen: boolean;
@@ -40,6 +41,7 @@ export default function LogRegisterModal({
   const [isExternal, setIsExternal] = useState("자체수리");
   const [vendorName, setVendorName] = useState("");
   const [repairStatus, setRepairStatus] = useState<StatusType>("처리중");
+  const [completedAt, setCompletedAt] = useState("");
   const [ventReason, setVentReason] = useState("타겟 교체");
   const [cleaningType, setCleaningType] = useState("정기 클리닝");
   const [nextScheduledAt, setNextScheduledAt] = useState("");
@@ -66,6 +68,7 @@ export default function LogRegisterModal({
       setIsExternal("자체수리");
       setVendorName("");
       setRepairStatus("처리중");
+      setCompletedAt("");
       setVentReason("타겟 교체");
       setCleaningType("정기 클리닝");
       setNextScheduledAt("");
@@ -150,6 +153,12 @@ export default function LogRegisterModal({
         operator,
         description,
         status: eventType === "repair" ? repairStatus : "완료",
+        // 수리를 바로 "완료"로 등록하는 경우에만 완료 일시를 보낸다.
+        // 미입력이면 현재 KST 벽시계를 datetime-local 형식으로 생성.
+        completedAt:
+          eventType === "repair" && repairStatus === "완료"
+            ? (completedAt || nowKst().toISOString().slice(0, 16))
+            : null,
       };
 
       if (eventType === "repair") {
@@ -345,6 +354,18 @@ export default function LogRegisterModal({
                 {isExternal === "외부업체" && (<div><label className="mb-1 block text-[11px] text-gray-500">업체명</label><input type="text" value={vendorName} onChange={(e) => setVendorName(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400" /></div>)}
               </div>
               <div><label className="mb-1 block text-[11px] text-gray-500">완료 여부</label><select value={repairStatus} onChange={(e) => setRepairStatus(e.target.value as StatusType)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"><option>처리중</option><option>완료</option></select></div>
+              {repairStatus === "완료" && (
+                <div>
+                  <label className="mb-1 block text-[11px] text-gray-500">완료 일시</label>
+                  <input
+                    type="datetime-local"
+                    value={completedAt}
+                    onChange={(e) => setCompletedAt(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"
+                  />
+                  <p className="mt-1 text-[10px] text-gray-400">미입력 시 현재 시각으로 기록됩니다.</p>
+                </div>
+              )}
             </div>
           )}
 

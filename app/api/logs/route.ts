@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/auth-utils";
+import { nowKst, parseKst } from "@/lib/kst";
 
 export async function GET(request: NextRequest) {
   try {
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       equipmentId, eventType, occurredAt, operator, description,
-      status,
+      status, completedAt,
       symptom, replacedParts, isExternal, vendorName,
       ventReason,
       cleaningType, nextScheduledAt,
@@ -61,10 +62,16 @@ export async function POST(request: NextRequest) {
       data: {
         equipmentId: Number(equipmentId),
         eventType,
-        occurredAt: new Date(occurredAt),
+        occurredAt: parseKst(occurredAt),
         operator,
         description: description || null,
         status: status || "처리중",
+        // 등록 시점에 이미 "완료"면 완료 일시를 함께 기록한다.
+        // 입력값이 있으면 그걸 쓰고, 없으면 현재 KST 시각.
+        completedAt:
+          (status || "처리중") === "완료"
+            ? (completedAt ? parseKst(completedAt) : nowKst())
+            : null,
         symptom: symptom || null,
         replacedParts: replacedParts || null,
         isExternal: isExternal ?? false,
@@ -113,12 +120,20 @@ export async function PATCH(request: NextRequest) {
     if (updateData.status !== undefined) {
       data.status = updateData.status;
       if (updateData.status === "완료") {
-        data.completedAt = new Date();
+        // 명시적으로 완료 일시를 보냈으면 그 값, 아니면 현재 KST 시각
+        data.completedAt = updateData.completedAt
+          ? parseKst(updateData.completedAt)
+          : nowKst();
+      } else {
+        // 완료 → 처리중 되돌릴 때 유령 값이 남지 않도록 초기화
+        data.completedAt = null;
       }
+    } else if (updateData.completedAt !== undefined) {
+      data.completedAt = updateData.completedAt ? parseKst(updateData.completedAt) : null;
     }
     if (updateData.description !== undefined) data.description = updateData.description;
     if (updateData.operator !== undefined) data.operator = updateData.operator;
-    if (updateData.occurredAt !== undefined) data.occurredAt = new Date(updateData.occurredAt);
+    if (updateData.occurredAt !== undefined) data.occurredAt = parseKst(updateData.occurredAt);
     if (updateData.symptom !== undefined) data.symptom = updateData.symptom;
     if (updateData.replacedParts !== undefined) data.replacedParts = updateData.replacedParts;
     if (updateData.isExternal !== undefined) data.isExternal = updateData.isExternal;

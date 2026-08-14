@@ -1,3 +1,5 @@
+import { nowKst } from "@/lib/kst";
+
 // PM(예방 유지보수) 주기 설정 (단위: 일)
 // 나중에 장비별 커스터마이징이 필요하면 DB로 이관
 
@@ -19,8 +21,9 @@ export function getPmStatus(
 ): PmStatus {
   if (intervalDays === 0) return "normal"; // 주기 0 = 스케줄 없음
   if (!lastDateStr) return "overdue"; // 기록 없으면 초과 처리
+  // lastDateStr은 occurred_at 기반(KST 벽시계 규칙)이므로 now도 같은 규칙으로 맞춘다.
   const last = new Date(lastDateStr);
-  const now = new Date();
+  const now = nowKst();
   const elapsed = Math.floor(
     (now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24)
   );

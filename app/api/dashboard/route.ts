@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getPmStatus } from "@/lib/pmConfig";
+import { nowKst, monthStartKst } from "@/lib/kst";
 
 export async function GET() {
   try {
-    const now = new Date();
-    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    // DB의 occurred_at / completed_at 은 "KST 벽시계를 UTC로 읽은 값"이므로
+    // 비교 기준도 같은 규칙으로 만들어야 한다. (lib/kst.ts 참고)
+    const now = nowKst();
+    const thisMonthStart = monthStartKst();
 
     // 모든 활성 장비 + 이력 한 번에 조회
     const equipments = await prisma.equipment.findMany({
@@ -46,7 +49,7 @@ export async function GET() {
         : getPmStatus(lastCleaningDate, eq.cleaningIntervalDays);
 
       // 이번 달 기준 시간(ms)
-      const monthDays = now.getDate();
+      const monthDays = now.getUTCDate();
       const monthTotalMs = monthDays * 24 * 60 * 60 * 1000;
       const monthStartMs = thisMonthStart.getTime();
       const nowMs = now.getTime();
