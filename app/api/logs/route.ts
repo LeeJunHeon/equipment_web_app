@@ -58,18 +58,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const parsedOccurredAt = parseKst(occurredAt);
+    if (isNaN(parsedOccurredAt.getTime())) {
+      return NextResponse.json({ error: "유효한 발생일시가 아닙니다." }, { status: 400 });
+    }
+
     const log = await prisma.equipmentLog.create({
       data: {
         equipmentId: Number(equipmentId),
         eventType,
-        occurredAt: parseKst(occurredAt),
+        occurredAt: parsedOccurredAt,
         operator,
         description: description || null,
         status: status || "처리중",
-        // 등록 시점에 이미 "완료"면 완료 일시를 함께 기록한다.
-        // 입력값이 있으면 그걸 쓰고, 없으면 현재 KST 시각.
+        // completed_at은 수리(repair) 전용. vent/cleaning은 시작~종료 구간이 없는
+        // 순간 이벤트라 occurred_at 하나로 충분하므로 항상 null.
         completedAt:
-          (status || "처리중") === "완료"
+          eventType === "repair" && (status || "처리중") === "완료"
             ? (completedAt ? parseKst(completedAt) : nowKst())
             : null,
         symptom: symptom || null,
