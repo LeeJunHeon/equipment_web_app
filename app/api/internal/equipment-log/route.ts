@@ -89,9 +89,9 @@ export async function POST(request: Request) {
         operator: (text(body.operatorName) ?? auth.actingEmail.split("@")[0]).slice(0, 50), // 표시명은 body(UTF-8). 없으면 이메일 앞부분
         description: text(body.description),
         status,
-        // 완료 상태로 등록되는 건(수리 완료, vent, cleaning)은 완료 일시를 함께 기록.
+        // completed_at은 수리(repair) 전용. vent/cleaning은 순간 이벤트라 항상 null.
         // 챗봇은 별도 완료 일시를 받지 않으므로 발생일시를 그대로 쓴다.
-        completedAt: status === "완료" ? occurredAt : null,
+        completedAt: isRepair && status === "완료" ? occurredAt : null,
         symptom: isRepair ? text(body.symptom) : null,
         replacedParts: isRepair ? text(body.replacedParts) : null,
         isExternal,
