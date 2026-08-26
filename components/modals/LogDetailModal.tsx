@@ -254,6 +254,18 @@ export default function LogDetailModal({ isOpen, onClose, onSave, logId, logs, i
                 {(log.downtimes?.length ?? 0) > 0 ? "수리 재시작" : "수리 시작"}
               </button>
             )}
+            {log.status === "처리중" && (
+              <button
+                onClick={() => {
+                  if (!confirm("장비를 다시 가동하고 '수리 필요' 상태로 전환합니다.\n지금까지의 정지 구간은 여기서 종료되어 기록에 남습니다.")) return;
+                  handleStatusChange("수리필요");
+                }}
+                disabled={actionLoading}
+                className="rounded-lg border border-amber-200 px-4 py-2 text-[12px] font-medium text-amber-700 hover:bg-amber-50 disabled:opacity-50"
+              >
+                가동 재개
+              </button>
+            )}
             {log.status !== "완료" && (
               <button onClick={() => handleStatusChange("완료")} disabled={actionLoading} className="rounded-lg bg-blue-600 px-4 py-2 text-[12px] font-medium text-white hover:bg-blue-700 disabled:opacity-50">완료처리</button>
             )}
