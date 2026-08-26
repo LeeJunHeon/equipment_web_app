@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { isAdmin } from "@/lib/auth-utils";
 
 export async function GET(
   _request: NextRequest,
@@ -35,6 +36,10 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    if (!(await isAdmin())) {
+      return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
+    }
+
     const { id } = await params;
     await prisma.equipmentPhoto.delete({
       where: { id: Number(id) },

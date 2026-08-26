@@ -201,12 +201,14 @@ export default function LogDetailModal({ isOpen, onClose, onSave, logId, logs, i
                         className="h-full w-full object-cover cursor-pointer"
                         onClick={() => openLightbox(idx)}
                       />
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleDeletePhoto(photo.id); }}
-                        className="absolute right-1 top-1 hidden h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow group-hover:flex"
-                      >
-                        <TrashIcon size={10} />
-                      </button>
+                      {isAdmin && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDeletePhoto(photo.id); }}
+                          className="absolute right-1 top-1 hidden h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow group-hover:flex"
+                        >
+                          <TrashIcon size={10} />
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
