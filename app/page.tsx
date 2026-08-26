@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { Equipment, EquipmentLog } from "@/lib/types";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
+import { REPAIR_STATUS } from "@/lib/repairStatus";
 import DashboardPage from "@/components/DashboardPage";
 import EquipmentDetailPage from "@/components/EquipmentDetailPage";
 import EquipmentSettingsPage from "@/components/EquipmentSettingsPage";
@@ -99,10 +100,10 @@ export default function Home() {
   }
 
   const inProgressLogs = logs.filter(
-    (l) => l.eventType === "repair" && l.status === "처리중"
+    (l) => l.eventType === "repair" && l.status === REPAIR_STATUS.STOPPED
   );
   const needsRepairLogs = logs.filter(
-    (l) => l.eventType === "repair" && l.status === "수리필요"
+    (l) => l.eventType === "repair" && l.status === REPAIR_STATUS.RUNNING
   );
 
   return (

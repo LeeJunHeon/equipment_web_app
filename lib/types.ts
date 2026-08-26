@@ -3,7 +3,7 @@ import type { RepairStatus } from "@/lib/repairStatus";
 export type PageId = "dashboard" | "equipment" | "equipment-settings" | "history-repair" | "history-vent" | "history-cleaning";
 
 export type EventType = "repair" | "vent" | "cleaning";
-export type StatusType = RepairStatus;   // "수리필요" | "처리중" | "완료"
+export type StatusType = RepairStatus;   // "가동중" | "정지중" | "완료"
 
 export interface Equipment {
   id: number;

@@ -4,7 +4,7 @@ import { Wrench, Wind, Sparkles, Plus } from "lucide-react";
 import type { EquipmentLog } from "@/lib/types";
 import LogDetailModal from "@/components/modals/LogDetailModal";
 import LogRegisterModal from "@/components/modals/LogRegisterModal";
-import { REPAIR_STATUSES, repairStatusBadgeClass } from "@/lib/repairStatus";
+import { REPAIR_STATUSES, repairStatusBadgeClass, repairStatusLabel, repairStatusShortLabel } from "@/lib/repairStatus";
 
 interface HistoryPageProps {
   eventType: "repair" | "vent" | "cleaning";
@@ -71,7 +71,7 @@ export default function HistoryPage({ eventType, refreshKey, onRefresh, isAdmin 
       {/* 상태 필터 (수리 이력 전용) */}
       {eventType === "repair" && (
         <div className="flex gap-1 rounded-xl bg-gray-100 p-1 w-fit">
-          {[{ value: "", label: "전체" }, ...REPAIR_STATUSES.map((v) => ({ value: v as string, label: v as string }))].map((opt) => (
+          {[{ value: "", label: "전체" }, ...REPAIR_STATUSES.map((v) => ({ value: v as string, label: repairStatusShortLabel(v) }))].map((opt) => (
             <button
               key={opt.value || "all"}
               onClick={() => setStatusFilter(opt.value)}
@@ -130,7 +130,7 @@ export default function HistoryPage({ eventType, refreshKey, onRefresh, isAdmin 
             <span className="text-gray-500">{log.operator}</span>
             {eventType === "repair" && (
               <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium w-fit ${repairStatusBadgeClass(log.status)}`}>
-                {log.status}
+                {repairStatusLabel(log.status)}
               </span>
             )}
           </div>
@@ -150,7 +150,7 @@ export default function HistoryPage({ eventType, refreshKey, onRefresh, isAdmin 
                 <span className="font-semibold text-[13px] text-gray-900">{log.equipmentName}</span>
                 {eventType === "repair" && (
                   <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${repairStatusBadgeClass(log.status)}`}>
-                    {log.status}
+                    {repairStatusLabel(log.status)}
                   </span>
                 )}
               </div>

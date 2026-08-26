@@ -83,7 +83,7 @@ export default function Header({
                   {unresolvedCount > 0 && (
                     <div className="px-4 py-3 border-b border-gray-50">
                       <p className="text-[11px] font-bold text-red-500 mb-2">
-                        수리 중 {unresolvedCount}건
+                        정지 중 {unresolvedCount}건
                       </p>
                       <div className="space-y-1.5">
                         {unresolvedDetails.map((r, i) => (

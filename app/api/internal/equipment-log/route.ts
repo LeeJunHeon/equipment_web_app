@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireEquipWriteAuth } from "@/lib/internal-write-auth";
 import { nowKst, parseKst } from "@/lib/kst";
-import { isRepairStatus } from "@/lib/repairStatus";
+import { isRepairStatus, REPAIR_STATUS } from "@/lib/repairStatus";
 
 export const dynamic = "force-dynamic";
 
@@ -78,10 +78,10 @@ export async function POST(request: Request) {
     const isVent = eventType === "vent";
     const isCleaning = eventType === "cleaning";
 
-    // 상태 기본값: vent/cleaning은 완료, repair는 body값(없으면 처리중)
+    // 상태 기본값: vent/cleaning은 완료, repair는 body값(없으면 정지중)
     const status = isRepair
-      ? (isRepairStatus(body.status) ? body.status : "처리중")
-      : "완료";
+      ? (isRepairStatus(body.status) ? body.status : REPAIR_STATUS.STOPPED)
+      : REPAIR_STATUS.DONE;
     const isExternal = isRepair && (body.isExternal === true || body.isExternal === "외부업체");
 
     const log = await prisma.equipmentLog.create({
@@ -93,14 +93,17 @@ export async function POST(request: Request) {
         description: text(body.description),
         status,
         // completed_at은 수리(repair) 전용. vent/cleaning은 순간 이벤트라 항상 null.
-        completedAt: isRepair && status === "완료" ? occurredAt : null,
+        completedAt: isRepair && status === REPAIR_STATUS.DONE ? occurredAt : null,
         // 챗봇은 별도 정지 일시를 받지 않으므로 발생일시를 정지 시작으로 쓴다.
-        // 수리필요는 아직 세운 게 아니므로 구간을 만들지 않는다.
-        ...(isRepair && status !== "수리필요"
+        // 가동중은 아직 세운 게 아니므로 구간을 만들지 않는다.
+        ...(isRepair && status !== REPAIR_STATUS.RUNNING
           ? {
               downtimes: {
                 create: [
-                  { startedAt: occurredAt, endedAt: status === "완료" ? occurredAt : null },
+                  {
+                    startedAt: occurredAt,
+                    endedAt: status === REPAIR_STATUS.DONE ? occurredAt : null,
+                  },
                 ],
               },
             }

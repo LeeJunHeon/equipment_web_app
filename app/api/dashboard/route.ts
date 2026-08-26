@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getPmStatus } from "@/lib/pmConfig";
 import { nowKst, monthStartKst } from "@/lib/kst";
 import { mergedDowntimeMs } from "@/lib/downtime";
+import { REPAIR_STATUS } from "@/lib/repairStatus";
 
 export async function GET() {
   try {
@@ -37,9 +38,9 @@ export async function GET() {
       const ventLogs = eq.logs.filter((l) => l.eventType === "vent");
       const cleaningLogs = eq.logs.filter((l) => l.eventType === "cleaning");
 
-      // 미해결 = 수리필요 + 처리중. 뱃지·정렬은 처리중을 우선한다.
-      const inProgressRepairs = repairLogs.filter((l) => l.status === "처리중");
-      const needsRepairs = repairLogs.filter((l) => l.status === "수리필요");
+      // 미해결 = 가동중 + 정지중. 뱃지·정렬은 정지중을 우선한다.
+      const inProgressRepairs = repairLogs.filter((l) => l.status === REPAIR_STATUS.STOPPED);
+      const needsRepairs = repairLogs.filter((l) => l.status === REPAIR_STATUS.RUNNING);
       const unresolvedRepairs = [...inProgressRepairs, ...needsRepairs];
 
       // 마지막 PM 날짜

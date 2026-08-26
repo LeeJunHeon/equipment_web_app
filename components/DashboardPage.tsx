@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Package, AlertTriangle, Wind, Sparkles, ShieldAlert, Activity, Wrench } from "lucide-react";
 import type { Equipment } from "@/lib/types";
 import { getPmStatusLabel, getPmStatusColor, PM_CONFIG } from "@/lib/pmConfig";
-import { repairStatusBadgeClass } from "@/lib/repairStatus";
+import { repairStatusBadgeClass, repairStatusLabel, REPAIR_STATUS } from "@/lib/repairStatus";
 
 interface EquipmentDashboard {
   id: number;
@@ -88,7 +88,7 @@ export default function DashboardPage({
     e.unresolvedRepairs.map((r) => ({ ...r, equipmentName: e.name }))
   );
 
-  // 수리 중 / 수리 필요 장비 이름 목록
+  // 정지 중 / 수리 필요 장비 이름 목록
   const inProgressEquipNames = equipments
     .filter((e) => e.inProgressRepairCount > 0)
     .map((e) => e.name)
@@ -119,7 +119,7 @@ export default function DashboardPage({
       icon: <Package size={18} className="text-blue-600" />,
     },
     {
-      label: "수리 중",
+      label: "정지 중",
       value: totalInProgress,
       sub: inProgressEquipNames || "없음",
       iconBg: "bg-red-100",
@@ -257,7 +257,7 @@ export default function DashboardPage({
                   <div className="flex flex-col items-end gap-1">
                     {isDowntime ? (
                       <span className="rounded-full bg-red-100 text-red-700 px-2 py-0.5 text-[10px] font-medium">
-                        수리 중
+                        정지 중
                       </span>
                     ) : isNeedsRepair ? (
                       <span className="rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 text-[10px] font-medium">
@@ -382,13 +382,13 @@ export default function DashboardPage({
                     <td className="px-4 py-2.5 text-gray-600">{r.symptom ?? "–"}</td>
                     <td className="px-4 py-2.5">
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${repairStatusBadgeClass(r.status)}`}>
-                        {r.status}
+                        {repairStatusLabel(r.status)}
                       </span>
                     </td>
                     <td className="hidden sm:table-cell px-4 py-2.5 text-gray-600">{r.operator}</td>
                     <td className="hidden sm:table-cell px-4 py-2.5 text-gray-600">{r.occurredAt.split("T")[0]}</td>
                     <td className="px-4 py-2.5">
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${r.status === "처리중" ? "bg-red-50 text-red-600" : "bg-amber-50 text-amber-600"}`}>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${r.status === REPAIR_STATUS.STOPPED ? "bg-red-50 text-red-600" : "bg-amber-50 text-amber-600"}`}>
                         {daysSince(r.occurredAt)}일
                       </span>
                     </td>

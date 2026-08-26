@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/app/generated/prisma";
 import { isAdmin } from "@/lib/auth-utils";
 import { nowKst, parseKst } from "@/lib/kst";
-import { isRepairStatus } from "@/lib/repairStatus";
+import { isRepairStatus, REPAIR_STATUS } from "@/lib/repairStatus";
 import { findOpenDowntime } from "@/lib/downtime";
 
 export async function GET(request: NextRequest) {
@@ -73,11 +73,11 @@ export async function POST(request: NextRequest) {
     const isRepair = eventType === "repair";
     // 수리가 아닌 이벤트(vent/cleaning)는 순간 이벤트이므로 항상 "완료".
     const finalStatus = isRepair
-      ? (isRepairStatus(status) ? status : "처리중")
-      : "완료";
+      ? (isRepairStatus(status) ? status : REPAIR_STATUS.STOPPED)
+      : REPAIR_STATUS.DONE;
 
     const parsedCompletedAt =
-      isRepair && finalStatus === "완료"
+      isRepair && finalStatus === REPAIR_STATUS.DONE
         ? (completedAt ? parseKst(completedAt) : nowKst())
         : null;
 
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     // - 처리중  : 발생 시점부터 정지 중 → 열린 구간 1개
     // - 완료    : 발생 시점부터 완료 시점까지 정지했던 것으로 본다 → 닫힌 구간 1개
     const initialDowntimes =
-      isRepair && finalStatus !== "수리필요"
+      isRepair && finalStatus !== REPAIR_STATUS.RUNNING
         ? [{ startedAt: parsedOccurredAt, endedAt: parsedCompletedAt }]
         : [];
 
@@ -171,7 +171,7 @@ export async function PATCH(request: NextRequest) {
         return NextResponse.json({ error: "이력을 찾을 수 없습니다." }, { status: 404 });
       }
       // vent/cleaning 은 시작~종료 구간이 없는 순간 이벤트라 항상 "완료"만 허용한다.
-      if (current.eventType !== "repair" && updateData.status !== "완료") {
+      if (current.eventType !== "repair" && updateData.status !== REPAIR_STATUS.DONE) {
         return NextResponse.json(
           { error: "수리 이력만 상태를 변경할 수 있습니다." },
           { status: 400 }
@@ -183,7 +183,7 @@ export async function PATCH(request: NextRequest) {
       const now = nowKst();
 
       // 정지 구간은 절대 삭제하지 않는다. 닫거나(ended_at 설정) 새로 연다(행 추가).
-      if (updateData.status === "수리필요") {
+      if (updateData.status === REPAIR_STATUS.RUNNING) {
         // 장비를 다시 돌리는 것 → 열린 구간이 있으면 지금 시점으로 닫는다.
         // 이전에 세웠던 구간은 그대로 보존된다.
         data.completedAt = null;
@@ -195,7 +195,7 @@ export async function PATCH(request: NextRequest) {
             })
           );
         }
-      } else if (updateData.status === "처리중") {
+      } else if (updateData.status === REPAIR_STATUS.STOPPED) {
         // 수리 시작 → 열린 구간이 없으면 새로 연다. 이미 열려 있으면 그대로 둔다.
         data.completedAt = null;
         if (!open) {
@@ -207,7 +207,7 @@ export async function PATCH(request: NextRequest) {
         }
       } else {
         // 완료 → 열린 구간이 있으면 완료 시각으로 닫는다.
-        // 열린 구간이 없으면(수리필요에서 바로 완료) 새 구간을 만들지 않는다.
+        // 열린 구간이 없으면(가동중에서 바로 완료) 새 구간을 만들지 않는다.
         // 과거에 닫힌 구간이 있으면 그대로 남아 비가동에 계속 반영된다.
         const completedAtValue = updateData.completedAt
           ? parseKst(updateData.completedAt)

@@ -6,7 +6,7 @@ import type { Equipment, EquipmentLog, LogEntry } from "@/lib/types";
 import RepairEntryModal from "@/components/modals/RepairEntryModal";
 import { getPmStatus, getPmStatusLabel, getPmStatusColor, PM_CONFIG } from "@/lib/pmConfig";
 import { assetPath } from "@/lib/asset-path";
-import { repairStatusBadgeClass } from "@/lib/repairStatus";
+import { repairStatusBadgeClass, repairStatusLabel, REPAIR_STATUS } from "@/lib/repairStatus";
 
 type Tab = "repair" | "maintenance";
 
@@ -169,9 +169,9 @@ export default function EquipmentDetailPage({
   const maintenanceLogs = logs.filter(
     (l) => l.eventType === "vent" || l.eventType === "cleaning"
   );
-  const inProgressRepairs = repairLogs.filter((l) => l.status === "처리중");
-  const needsRepairs = repairLogs.filter((l) => l.status === "수리필요");
-  const resolvedRepairs = repairLogs.filter((l) => l.status === "완료");
+  const inProgressRepairs = repairLogs.filter((l) => l.status === REPAIR_STATUS.STOPPED);
+  const needsRepairs = repairLogs.filter((l) => l.status === REPAIR_STATUS.RUNNING);
+  const resolvedRepairs = repairLogs.filter((l) => l.status === REPAIR_STATUS.DONE);
   const openRepairs = [...inProgressRepairs, ...needsRepairs];
 
   const now = new Date();
@@ -203,8 +203,8 @@ export default function EquipmentDetailPage({
     const isLoading = loadingEntries.has(log.id);
     const entries = entriesMap[log.id] ?? [];
     const grouped = groupEntriesByDate(entries);
-    const isDowntime = log.status === "처리중";
-    const isNeedsRepair = log.status === "수리필요";
+    const isDowntime = log.status === REPAIR_STATUS.STOPPED;
+    const isNeedsRepair = log.status === REPAIR_STATUS.RUNNING;
 
     return (
       <div
@@ -226,7 +226,7 @@ export default function EquipmentDetailPage({
                   {log.symptom ?? "증상 미입력"}
                 </p>
                 <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${repairStatusBadgeClass(log.status)}`}>
-                  {log.status}
+                  {repairStatusLabel(log.status)}
                 </span>
               </div>
               <p className="text-[11px] text-gray-400 mt-0.5">
@@ -366,7 +366,7 @@ export default function EquipmentDetailPage({
         </div>
         {inProgressRepairs.length > 0 ? (
           <span className="rounded-full bg-red-100 text-red-700 text-[11px] font-semibold px-2.5 py-1">
-            수리 중 {inProgressRepairs.length}건
+            정지 중 {inProgressRepairs.length}건
           </span>
         ) : needsRepairs.length > 0 ? (
           <span className="rounded-full bg-amber-100 text-amber-700 text-[11px] font-semibold px-2.5 py-1">
@@ -428,14 +428,14 @@ export default function EquipmentDetailPage({
 
           {inProgressRepairs.length > 0 && (
             <div className="space-y-2">
-              <p className="text-[11px] font-semibold text-red-500 uppercase tracking-wider">처리 중</p>
+              <p className="text-[11px] font-semibold text-red-500 uppercase tracking-wider">정지 중 (수리 중)</p>
               {inProgressRepairs.map(renderRepairCard)}
             </div>
           )}
 
           {needsRepairs.length > 0 && (
             <div className="space-y-2">
-              <p className="text-[11px] font-semibold text-amber-600 uppercase tracking-wider">수리 필요 (가동 중)</p>
+              <p className="text-[11px] font-semibold text-amber-600 uppercase tracking-wider">가동 중 (수리 필요)</p>
               {needsRepairs.map(renderRepairCard)}
             </div>
           )}

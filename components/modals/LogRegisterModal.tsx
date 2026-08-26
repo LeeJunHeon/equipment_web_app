@@ -7,7 +7,7 @@ import type { EventType, Equipment, StatusType } from "@/lib/types";
 import PhotoUploader from "@/components/ui/PhotoUploader";
 import VoiceInput from "@/components/ui/VoiceInput";
 import { nowKst } from "@/lib/kst";
-import { REPAIR_STATUSES } from "@/lib/repairStatus";
+import { REPAIR_STATUSES, REPAIR_STATUS, repairStatusLabel } from "@/lib/repairStatus";
 
 interface LogRegisterModalProps {
   isOpen: boolean;
@@ -41,7 +41,7 @@ export default function LogRegisterModal({
   const [newPartQty, setNewPartQty] = useState(1);
   const [isExternal, setIsExternal] = useState("자체수리");
   const [vendorName, setVendorName] = useState("");
-  const [repairStatus, setRepairStatus] = useState<StatusType>("처리중");
+  const [repairStatus, setRepairStatus] = useState<StatusType>(REPAIR_STATUS.STOPPED);
   const [completedAt, setCompletedAt] = useState("");
   const [ventReason, setVentReason] = useState("타겟 교체");
   const [cleaningType, setCleaningType] = useState("정기 클리닝");
@@ -68,7 +68,7 @@ export default function LogRegisterModal({
       setNewPartQty(1);
       setIsExternal("자체수리");
       setVendorName("");
-      setRepairStatus("처리중");
+      setRepairStatus(REPAIR_STATUS.STOPPED);
       setCompletedAt("");
       setVentReason("타겟 교체");
       setCleaningType("정기 클리닝");
@@ -153,11 +153,11 @@ export default function LogRegisterModal({
         })(),
         operator,
         description,
-        status: eventType === "repair" ? repairStatus : "완료",
+        status: eventType === "repair" ? repairStatus : REPAIR_STATUS.DONE,
         // 수리를 바로 "완료"로 등록하는 경우에만 완료 일시를 보낸다.
         // 미입력이면 현재 KST 벽시계를 datetime-local 형식으로 생성.
         completedAt:
-          eventType === "repair" && repairStatus === "완료"
+          eventType === "repair" && repairStatus === REPAIR_STATUS.DONE
             ? (completedAt || nowKst().toISOString().slice(0, 16))
             : null,
       };
@@ -362,18 +362,18 @@ export default function LogRegisterModal({
                   className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"
                 >
                   {REPAIR_STATUSES.map((s) => (
-                    <option key={s} value={s}>{s}</option>
+                    <option key={s} value={s}>{repairStatusLabel(s)}</option>
                   ))}
                 </select>
                 <p className="mt-1 text-[10px] text-gray-400">
-                  {repairStatus === "수리필요"
-                    ? "장비는 계속 가동 중입니다. 가동률에 반영되지 않습니다."
-                    : repairStatus === "처리중"
+                  {repairStatus === REPAIR_STATUS.RUNNING
+                    ? "장비는 계속 돌고 있습니다. 가동률에 반영되지 않습니다."
+                    : repairStatus === REPAIR_STATUS.STOPPED
                     ? "장비를 세운 상태입니다. 지금부터 비가동 시간이 쌓입니다."
                     : "수리가 끝난 건으로 기록됩니다."}
                 </p>
               </div>
-              {repairStatus === "완료" && (
+              {repairStatus === REPAIR_STATUS.DONE && (
                 <div>
                   <label className="mb-1 block text-[11px] text-gray-500">완료 일시</label>
                   <input

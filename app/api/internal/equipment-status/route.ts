@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getPmStatus, getPmStatusLabel } from "@/lib/pmConfig";
 import { requireEquipReadAuth } from "@/lib/internal-auth";
+import { REPAIR_STATUS } from "@/lib/repairStatus";
 
 export const dynamic = "force-dynamic";
 
@@ -36,10 +37,10 @@ export async function GET(request: Request) {
       const ventLogs = eq.logs.filter((l) => l.eventType === "vent");
       const cleaningLogs = eq.logs.filter((l) => l.eventType === "cleaning");
       const inProgress = eq.logs.filter(
-        (l) => l.eventType === "repair" && l.status === "처리중"
+        (l) => l.eventType === "repair" && l.status === REPAIR_STATUS.STOPPED
       );
       const needsRepair = eq.logs.filter(
-        (l) => l.eventType === "repair" && l.status === "수리필요"
+        (l) => l.eventType === "repair" && l.status === REPAIR_STATUS.RUNNING
       );
       const unresolved = [...inProgress, ...needsRepair];
 

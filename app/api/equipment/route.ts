@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/auth-utils";
+import { REPAIR_STATUS } from "@/lib/repairStatus";
 
 export async function GET() {
   try {
@@ -9,7 +10,10 @@ export async function GET() {
       orderBy: { id: "asc" },
       include: {
         logs: {
-          where: { eventType: "repair", status: { in: ["수리필요", "처리중"] } },
+          where: {
+            eventType: "repair",
+            status: { in: [REPAIR_STATUS.RUNNING, REPAIR_STATUS.STOPPED] },
+          },
           select: { id: true, status: true },
         },
       },
@@ -25,8 +29,8 @@ export async function GET() {
       isActive: eq.isActive,
       createdAt: eq.createdAt,
       unresolvedRepairCount: eq.logs.length,
-      inProgressRepairCount: eq.logs.filter((l) => l.status === "처리중").length,
-      needsRepairCount: eq.logs.filter((l) => l.status === "수리필요").length,
+      inProgressRepairCount: eq.logs.filter((l) => l.status === REPAIR_STATUS.STOPPED).length,
+      needsRepairCount: eq.logs.filter((l) => l.status === REPAIR_STATUS.RUNNING).length,
       ventIntervalDays: eq.ventIntervalDays,
       cleaningIntervalDays: eq.cleaningIntervalDays,
     }));

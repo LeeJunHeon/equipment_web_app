@@ -33,8 +33,8 @@ model EquipmentLog {
   occurredAt    DateTime  @map("occurred_at")
   operator      String    @db.VarChar(50)
   description   String?   @db.Text
-  // 수리: 수리필요 | 처리중 | 완료   /   벤트·클리닝: 항상 완료
-  status        String    @default("처리중") @db.VarChar(20)
+  // 수리: 가동중 | 정지중 | 완료   /   벤트·클리닝: 항상 완료
+  status        String    @default("정지중") @db.VarChar(20)
 
   symptom       String?   @db.Text
   replacedParts String?   @db.Text        @map("replaced_parts")
