@@ -9,8 +9,8 @@ export async function GET() {
       orderBy: { id: "asc" },
       include: {
         logs: {
-          where: { eventType: "repair", status: "처리중" },
-          select: { id: true },
+          where: { eventType: "repair", status: { in: ["수리필요", "처리중"] } },
+          select: { id: true, status: true },
         },
       },
     });
@@ -25,6 +25,8 @@ export async function GET() {
       isActive: eq.isActive,
       createdAt: eq.createdAt,
       unresolvedRepairCount: eq.logs.length,
+      inProgressRepairCount: eq.logs.filter((l) => l.status === "처리중").length,
+      needsRepairCount: eq.logs.filter((l) => l.status === "수리필요").length,
       ventIntervalDays: eq.ventIntervalDays,
       cleaningIntervalDays: eq.cleaningIntervalDays,
     }));

@@ -9,6 +9,8 @@ interface HeaderProps {
   onToggleSidebar: () => void;
   unresolvedCount: number;
   unresolvedDetails?: { equipmentName: string; symptom: string }[];
+  needsRepairCount?: number;
+  needsRepairDetails?: { equipmentName: string; symptom: string }[];
   pmIssueCount?: number;
   pmIssueDetails?: { name: string; issues: string[] }[];
 }
@@ -19,6 +21,8 @@ export default function Header({
   onToggleSidebar,
   unresolvedCount,
   unresolvedDetails = [],
+  needsRepairCount = 0,
+  needsRepairDetails = [],
   pmIssueCount = 0,
   pmIssueDetails = [],
 }: HeaderProps) {
@@ -55,9 +59,9 @@ export default function Header({
           className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative"
         >
           <Bell size={18} className="text-gray-500" />
-          {(unresolvedCount + pmIssueCount) > 0 && (
+          {(unresolvedCount + needsRepairCount + pmIssueCount) > 0 && (
             <span className="absolute top-1 right-1 min-w-[16px] h-4 bg-rose-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white px-1">
-              {unresolvedCount + pmIssueCount}
+              {unresolvedCount + needsRepairCount + pmIssueCount}
             </span>
           )}
         </button>
@@ -70,7 +74,7 @@ export default function Header({
                 <p className="text-sm font-bold text-gray-900">알림</p>
               </div>
 
-              {unresolvedCount === 0 && pmIssueCount === 0 ? (
+              {unresolvedCount === 0 && needsRepairCount === 0 && pmIssueCount === 0 ? (
                 <div className="px-4 py-5 text-center">
                   <p className="text-[13px] text-gray-400">새로운 알림이 없습니다</p>
                 </div>
@@ -79,10 +83,24 @@ export default function Header({
                   {unresolvedCount > 0 && (
                     <div className="px-4 py-3 border-b border-gray-50">
                       <p className="text-[11px] font-bold text-red-500 mb-2">
-                        미해결 수리 {unresolvedCount}건
+                        수리 중 {unresolvedCount}건
                       </p>
                       <div className="space-y-1.5">
                         {unresolvedDetails.map((r, i) => (
+                          <p key={i} className="text-[12px] text-gray-700">
+                            · {r.equipmentName}{r.symptom ? ` — ${r.symptom}` : ""}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {needsRepairCount > 0 && (
+                    <div className="px-4 py-3 border-b border-gray-50">
+                      <p className="text-[11px] font-bold text-amber-600 mb-2">
+                        수리 필요 {needsRepairCount}건
+                      </p>
+                      <div className="space-y-1.5">
+                        {needsRepairDetails.map((r, i) => (
                           <p key={i} className="text-[12px] text-gray-700">
                             · {r.equipmentName}{r.symptom ? ` — ${r.symptom}` : ""}
                           </p>

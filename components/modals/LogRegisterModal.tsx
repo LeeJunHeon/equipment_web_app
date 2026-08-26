@@ -7,6 +7,7 @@ import type { EventType, Equipment, StatusType } from "@/lib/types";
 import PhotoUploader from "@/components/ui/PhotoUploader";
 import VoiceInput from "@/components/ui/VoiceInput";
 import { nowKst } from "@/lib/kst";
+import { REPAIR_STATUSES } from "@/lib/repairStatus";
 
 interface LogRegisterModalProps {
   isOpen: boolean;
@@ -353,7 +354,25 @@ export default function LogRegisterModal({
                 <div><label className="mb-1 block text-[11px] text-gray-500">외부 업체 여부</label><select value={isExternal} onChange={(e) => setIsExternal(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"><option>자체수리</option><option>외부업체</option></select></div>
                 {isExternal === "외부업체" && (<div><label className="mb-1 block text-[11px] text-gray-500">업체명</label><input type="text" value={vendorName} onChange={(e) => setVendorName(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400" /></div>)}
               </div>
-              <div><label className="mb-1 block text-[11px] text-gray-500">완료 여부</label><select value={repairStatus} onChange={(e) => setRepairStatus(e.target.value as StatusType)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"><option>처리중</option><option>완료</option></select></div>
+              <div>
+                <label className="mb-1 block text-[11px] text-gray-500">진행 상태</label>
+                <select
+                  value={repairStatus}
+                  onChange={(e) => setRepairStatus(e.target.value as StatusType)}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[12px] outline-none focus:border-blue-400"
+                >
+                  {REPAIR_STATUSES.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+                <p className="mt-1 text-[10px] text-gray-400">
+                  {repairStatus === "수리필요"
+                    ? "장비는 계속 가동 중입니다. 가동률에 반영되지 않습니다."
+                    : repairStatus === "처리중"
+                    ? "장비를 세운 상태입니다. 지금부터 비가동 시간이 쌓입니다."
+                    : "수리가 끝난 건으로 기록됩니다."}
+                </p>
+              </div>
               {repairStatus === "완료" && (
                 <div>
                   <label className="mb-1 block text-[11px] text-gray-500">완료 일시</label>

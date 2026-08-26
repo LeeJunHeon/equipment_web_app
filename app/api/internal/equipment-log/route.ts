@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireEquipWriteAuth } from "@/lib/internal-write-auth";
 import { nowKst, parseKst } from "@/lib/kst";
+import { isRepairStatus } from "@/lib/repairStatus";
 
 export const dynamic = "force-dynamic";
 
@@ -78,7 +79,9 @@ export async function POST(request: Request) {
     const isCleaning = eventType === "cleaning";
 
     // 상태 기본값: vent/cleaning은 완료, repair는 body값(없으면 처리중)
-    const status = isRepair ? (body.status === "완료" ? "완료" : "처리중") : "완료";
+    const status = isRepair
+      ? (isRepairStatus(body.status) ? body.status : "처리중")
+      : "완료";
     const isExternal = isRepair && (body.isExternal === true || body.isExternal === "외부업체");
 
     const log = await prisma.equipmentLog.create({
@@ -89,8 +92,10 @@ export async function POST(request: Request) {
         operator: (text(body.operatorName) ?? auth.actingEmail.split("@")[0]).slice(0, 50), // 표시명은 body(UTF-8). 없으면 이메일 앞부분
         description: text(body.description),
         status,
+        // 챗봇은 별도 정지/완료 일시를 받지 않으므로 발생일시를 그대로 쓴다.
+        // 수리필요는 아직 장비를 세운 게 아니므로 repair_started_at은 null.
+        repairStartedAt: isRepair && status !== "수리필요" ? occurredAt : null,
         // completed_at은 수리(repair) 전용. vent/cleaning은 순간 이벤트라 항상 null.
-        // 챗봇은 별도 완료 일시를 받지 않으므로 발생일시를 그대로 쓴다.
         completedAt: isRepair && status === "완료" ? occurredAt : null,
         symptom: isRepair ? text(body.symptom) : null,
         replacedParts: isRepair ? text(body.replacedParts) : null,
@@ -112,6 +117,7 @@ export async function POST(request: Request) {
         status: log.status,
         operator: log.operator,
         occurredAt: log.occurredAt.toISOString(),
+        repairStartedAt: log.repairStartedAt ? log.repairStartedAt.toISOString() : null,
         completedAt: log.completedAt ? log.completedAt.toISOString() : null,
       },
       { status: 201 }

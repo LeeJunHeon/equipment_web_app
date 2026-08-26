@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     const equipmentName = searchParams.get("equipment");
     const equipmentIdParam = searchParams.get("equipmentId");
     const eventType = searchParams.get("eventType"); // repair | vent | cleaning
-    const status = searchParams.get("status");       // 처리중 | 완료
+    const status = searchParams.get("status");       // 수리필요 | 처리중 | 완료
     const limit = Math.min(Number(searchParams.get("limit")) || 30, 100);
 
     const where: Record<string, unknown> = {};
@@ -39,6 +39,7 @@ export async function GET(request: Request) {
         id: true,
         eventType: true,
         occurredAt: true,
+        repairStartedAt: true,
         completedAt: true,
         operator: true,
         description: true,
@@ -60,6 +61,7 @@ export async function GET(request: Request) {
         eventType: l.eventType,
         status: l.status,
         occurredAt: l.occurredAt.toISOString(),
+        repairStartedAt: l.repairStartedAt ? l.repairStartedAt.toISOString() : null,
         completedAt: l.completedAt ? l.completedAt.toISOString() : null,
         operator: l.operator,
         description: l.description,

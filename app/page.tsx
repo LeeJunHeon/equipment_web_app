@@ -98,9 +98,12 @@ export default function Home() {
     setShowRegisterModal(true);
   }
 
-  const unresolvedCount = logs.filter(
+  const inProgressLogs = logs.filter(
     (l) => l.eventType === "repair" && l.status === "처리중"
-  ).length;
+  );
+  const needsRepairLogs = logs.filter(
+    (l) => l.eventType === "repair" && l.status === "수리필요"
+  );
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -127,10 +130,10 @@ export default function Home() {
           currentPage={currentPage}
           equipmentName={selectedEquipment?.name}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          unresolvedCount={unresolvedCount}
-          unresolvedDetails={logs
-            .filter((l) => l.eventType === "repair" && l.status === "처리중")
-            .map((l) => ({ equipmentName: l.equipmentName, symptom: l.symptom ?? "" }))}
+          unresolvedCount={inProgressLogs.length}
+          unresolvedDetails={inProgressLogs.map((l) => ({ equipmentName: l.equipmentName, symptom: l.symptom ?? "" }))}
+          needsRepairCount={needsRepairLogs.length}
+          needsRepairDetails={needsRepairLogs.map((l) => ({ equipmentName: l.equipmentName, symptom: l.symptom ?? "" }))}
           pmIssueCount={pmIssueCount}
           pmIssueDetails={pmIssueDetails}
         />

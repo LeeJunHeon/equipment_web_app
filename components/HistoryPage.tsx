@@ -4,6 +4,7 @@ import { Wrench, Wind, Sparkles, Plus } from "lucide-react";
 import type { EquipmentLog } from "@/lib/types";
 import LogDetailModal from "@/components/modals/LogDetailModal";
 import LogRegisterModal from "@/components/modals/LogRegisterModal";
+import { REPAIR_STATUSES, repairStatusBadgeClass } from "@/lib/repairStatus";
 
 interface HistoryPageProps {
   eventType: "repair" | "vent" | "cleaning";
@@ -32,6 +33,7 @@ export default function HistoryPage({ eventType, refreshKey, onRefresh, isAdmin 
   const [loading, setLoading] = useState(true);
   const [selectedLogId, setSelectedLogId] = useState<number | null>(null);
   const [showRegister, setShowRegister] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("");
   const cfg = CONFIG[eventType];
   const Icon = cfg.icon;
 
@@ -43,6 +45,12 @@ export default function HistoryPage({ eventType, refreshKey, onRefresh, isAdmin 
       .catch(() => setLogs([]))
       .finally(() => setLoading(false));
   }, [eventType, refreshKey]);
+
+  // 수리 이력은 완료 건이 쌓이므로 상태별로 걸러볼 수 있게 한다.
+  const visibleLogs =
+    eventType === "repair" && statusFilter
+      ? logs.filter((l) => l.status === statusFilter)
+      : logs;
 
   return (
     <div className="space-y-5">
@@ -59,6 +67,25 @@ export default function HistoryPage({ eventType, refreshKey, onRefresh, isAdmin 
           <Plus size={15} /> 이력 등록
         </button>
       </div>
+
+      {/* 상태 필터 (수리 이력 전용) */}
+      {eventType === "repair" && (
+        <div className="flex gap-1 rounded-xl bg-gray-100 p-1 w-fit">
+          {[{ value: "", label: "전체" }, ...REPAIR_STATUSES.map((v) => ({ value: v as string, label: v as string }))].map((opt) => (
+            <button
+              key={opt.value || "all"}
+              onClick={() => setStatusFilter(opt.value)}
+              className={`rounded-lg px-3 py-1.5 text-[12px] font-medium transition-all ${
+                statusFilter === opt.value
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* 목록 */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
@@ -79,13 +106,13 @@ export default function HistoryPage({ eventType, refreshKey, onRefresh, isAdmin 
           </div>
         )}
 
-        {!loading && logs.length === 0 && (
+        {!loading && visibleLogs.length === 0 && (
           <div className="py-16 text-center text-[13px] text-gray-400">
             등록된 이력이 없습니다.
           </div>
         )}
 
-        {!loading && logs.map((log) => (
+        {!loading && visibleLogs.map((log) => (
           <div
             key={log.id}
             onClick={() => setSelectedLogId(log.id)}
@@ -102,7 +129,7 @@ export default function HistoryPage({ eventType, refreshKey, onRefresh, isAdmin 
             </span>
             <span className="text-gray-500">{log.operator}</span>
             {eventType === "repair" && (
-              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium w-fit ${log.status === "처리중" ? "bg-yellow-100 text-yellow-700" : "bg-green-100 text-green-700"}`}>
+              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium w-fit ${repairStatusBadgeClass(log.status)}`}>
                 {log.status}
               </span>
             )}
@@ -111,9 +138,9 @@ export default function HistoryPage({ eventType, refreshKey, onRefresh, isAdmin 
       </div>
 
       {/* 모바일용 카드 목록 — sm 이하에서만 표시 */}
-      {!loading && logs.length > 0 && (
+      {!loading && visibleLogs.length > 0 && (
         <div className="sm:hidden space-y-2">
-          {logs.map((log) => (
+          {visibleLogs.map((log) => (
             <div
               key={log.id}
               onClick={() => setSelectedLogId(log.id)}
@@ -122,7 +149,7 @@ export default function HistoryPage({ eventType, refreshKey, onRefresh, isAdmin 
               <div className="flex items-center justify-between mb-1">
                 <span className="font-semibold text-[13px] text-gray-900">{log.equipmentName}</span>
                 {eventType === "repair" && (
-                  <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${log.status === "처리중" ? "bg-yellow-100 text-yellow-700" : "bg-green-100 text-green-700"}`}>
+                  <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${repairStatusBadgeClass(log.status)}`}>
                     {log.status}
                   </span>
                 )}

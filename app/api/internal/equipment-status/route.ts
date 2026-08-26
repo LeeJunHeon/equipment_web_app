@@ -35,9 +35,13 @@ export async function GET(request: Request) {
     const result = equipments.map((eq) => {
       const ventLogs = eq.logs.filter((l) => l.eventType === "vent");
       const cleaningLogs = eq.logs.filter((l) => l.eventType === "cleaning");
-      const unresolved = eq.logs.filter(
+      const inProgress = eq.logs.filter(
         (l) => l.eventType === "repair" && l.status === "처리중"
       );
+      const needsRepair = eq.logs.filter(
+        (l) => l.eventType === "repair" && l.status === "수리필요"
+      );
+      const unresolved = [...inProgress, ...needsRepair];
 
       const lastVent = ventLogs[0]?.occurredAt;
       const lastCleaning = cleaningLogs[0]?.occurredAt;
@@ -64,7 +68,10 @@ export async function GET(request: Request) {
         cleaningStatus,
         cleaningStatusLabel: cleaningStatus ? getPmStatusLabel(cleaningStatus) : null,
         unresolvedRepairCount: unresolved.length,
+        inProgressRepairCount: inProgress.length,
+        needsRepairCount: needsRepair.length,
         unresolvedRepairs: unresolved.map((r) => ({
+          status: r.status,
           symptom: r.symptom,
           operator: r.operator,
           occurredAt: ymd(r.occurredAt),
@@ -73,13 +80,21 @@ export async function GET(request: Request) {
     });
 
     const totalUnresolved = result.reduce((s, e) => s + e.unresolvedRepairCount, 0);
+    const totalInProgress = result.reduce((s, e) => s + e.inProgressRepairCount, 0);
+    const totalNeedsRepair = result.reduce((s, e) => s + e.needsRepairCount, 0);
     const pmIssueCount = result.filter(
       (e) =>
         (e.ventStatus !== null && e.ventStatus !== "normal") ||
         (e.cleaningStatus !== null && e.cleaningStatus !== "normal")
     ).length;
 
-    return NextResponse.json({ equipments: result, totalUnresolved, pmIssueCount });
+    return NextResponse.json({
+      equipments: result,
+      totalUnresolved,
+      totalInProgress,
+      totalNeedsRepair,
+      pmIssueCount,
+    });
   } catch (error) {
     console.error("GET /api/internal/equipment-status error:", error);
     return NextResponse.json({ error: "장비 현황 조회 실패" }, { status: 500 });

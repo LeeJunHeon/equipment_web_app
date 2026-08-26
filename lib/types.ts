@@ -1,7 +1,9 @@
+import type { RepairStatus } from "@/lib/repairStatus";
+
 export type PageId = "dashboard" | "equipment" | "equipment-settings" | "history-repair" | "history-vent" | "history-cleaning";
 
 export type EventType = "repair" | "vent" | "cleaning";
-export type StatusType = "처리중" | "완료";
+export type StatusType = RepairStatus;   // "수리필요" | "처리중" | "완료"
 
 export interface Equipment {
   id: number;
@@ -13,6 +15,8 @@ export interface Equipment {
   isActive?: boolean;
   createdAt?: string;
   unresolvedRepairCount: number;
+  inProgressRepairCount?: number;
+  needsRepairCount?: number;
   ventIntervalDays?: number;
   cleaningIntervalDays?: number;
 }
@@ -40,6 +44,7 @@ export interface EquipmentLog {
   ventReason?: string | null;
   cleaningType?: string | null;
   nextScheduledAt?: string | null;
+  repairStartedAt?: string | null;
   completedAt?: string | null;
 }
 

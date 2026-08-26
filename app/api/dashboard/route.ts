@@ -24,6 +24,7 @@ export async function GET() {
             status: true,
             symptom: true,
             operator: true,
+            repairStartedAt: true,
             completedAt: true,
           },
         },
@@ -35,8 +36,10 @@ export async function GET() {
       const ventLogs = eq.logs.filter((l) => l.eventType === "vent");
       const cleaningLogs = eq.logs.filter((l) => l.eventType === "cleaning");
 
-      // 미해결 수리
-      const unresolvedRepairs = repairLogs.filter((l) => l.status === "처리중");
+      // 미해결 = 수리필요 + 처리중. 뱃지·정렬은 처리중을 우선한다.
+      const inProgressRepairs = repairLogs.filter((l) => l.status === "처리중");
+      const needsRepairs = repairLogs.filter((l) => l.status === "수리필요");
+      const unresolvedRepairs = [...inProgressRepairs, ...needsRepairs];
 
       // 마지막 PM 날짜
       const lastVentDate = ventLogs[0]?.occurredAt.toISOString() ?? undefined;
@@ -54,19 +57,22 @@ export async function GET() {
       const monthStartMs = thisMonthStart.getTime();
       const nowMs = now.getTime();
 
-      // 이번 달에 영향을 주는 수리만 필터
-      // - 처리중: 시작 시점 무관하게 포함 (지금도 비가동 중)
-      // - 완료: completedAt이 이번 달 이후인 것만 포함
+      // 비가동 계산은 "실제로 장비를 세운 시각"(repairStartedAt) 기준이다.
+      // repairStartedAt이 null이면 장비를 세운 적이 없다는 뜻(수리필요 상태이거나
+      // 수리필요 → 완료 직행)이므로 비가동에 전혀 반영하지 않는다.
       const relevantRepairs = repairLogs.filter((r) => {
-        if (r.status === "처리중") return true;
+        if (!r.repairStartedAt) return false;
+        if (r.status === "수리필요") return false;      // 가동 중 → 비가동 아님
+        if (r.status === "처리중") return true;         // 지금도 정지 중
         if (!r.completedAt) return false;
-        return r.completedAt.getTime() >= monthStartMs;
+        return r.completedAt.getTime() >= monthStartMs; // 이번 달에 걸친 완료 건만
       });
 
       // 각 수리의 비가동 구간 [startMs, endMs] 계산
       const ranges: [number, number][] = [];
       for (const repair of relevantRepairs) {
-        const startMs = Math.max(repair.occurredAt.getTime(), monthStartMs);
+        const startedMs = repair.repairStartedAt!.getTime();
+        const startMs = Math.max(startedMs, monthStartMs);
         let endMs: number;
 
         if (repair.status === "처리중") {
@@ -108,10 +114,13 @@ export async function GET() {
         isVentTarget: eq.isVentTarget,
         isCleaningTarget: eq.isCleaningTarget,
         unresolvedRepairCount: unresolvedRepairs.length,
+        inProgressRepairCount: inProgressRepairs.length,
+        needsRepairCount: needsRepairs.length,
         unresolvedRepairs: unresolvedRepairs.map((r) => ({
           id: r.id,
           symptom: r.symptom,
           operator: r.operator,
+          status: r.status,
           occurredAt: r.occurredAt.toISOString(),
         })),
         lastVentDate,
@@ -127,12 +136,14 @@ export async function GET() {
 
     // 전체 요약
     const totalUnresolved = result.reduce((s, e) => s + e.unresolvedRepairCount, 0);
+    const totalInProgress = result.reduce((s, e) => s + e.inProgressRepairCount, 0);
+    const totalNeedsRepair = result.reduce((s, e) => s + e.needsRepairCount, 0);
     const pmIssueCount = result.filter(
       (e) => e.ventStatus !== "normal" || e.cleaningStatus !== "normal"
     ).length;
 
     return NextResponse.json(
-      { equipments: result, totalUnresolved, pmIssueCount }
+      { equipments: result, totalUnresolved, totalInProgress, totalNeedsRepair, pmIssueCount }
     );
   } catch (error) {
     console.error("GET /api/dashboard error:", error);

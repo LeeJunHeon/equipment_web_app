@@ -6,6 +6,7 @@ import type { Equipment, EquipmentLog, LogEntry } from "@/lib/types";
 import RepairEntryModal from "@/components/modals/RepairEntryModal";
 import { getPmStatus, getPmStatusLabel, getPmStatusColor, PM_CONFIG } from "@/lib/pmConfig";
 import { assetPath } from "@/lib/asset-path";
+import { repairStatusBadgeClass } from "@/lib/repairStatus";
 
 type Tab = "repair" | "maintenance";
 
@@ -168,8 +169,10 @@ export default function EquipmentDetailPage({
   const maintenanceLogs = logs.filter(
     (l) => l.eventType === "vent" || l.eventType === "cleaning"
   );
-  const unresolvedRepairs = repairLogs.filter((l) => l.status === "처리중");
+  const inProgressRepairs = repairLogs.filter((l) => l.status === "처리중");
+  const needsRepairs = repairLogs.filter((l) => l.status === "수리필요");
   const resolvedRepairs = repairLogs.filter((l) => l.status === "완료");
+  const openRepairs = [...inProgressRepairs, ...needsRepairs];
 
   const now = new Date();
   function daysSince(dateStr: string) {
@@ -200,14 +203,17 @@ export default function EquipmentDetailPage({
     const isLoading = loadingEntries.has(log.id);
     const entries = entriesMap[log.id] ?? [];
     const grouped = groupEntriesByDate(entries);
-    const isUnresolved = log.status === "처리중";
+    const isDowntime = log.status === "처리중";
+    const isNeedsRepair = log.status === "수리필요";
 
     return (
       <div
         key={log.id}
         className={`bg-white rounded-xl border shadow-sm overflow-hidden ${
-          isUnresolved
+          isDowntime
             ? "border-red-100 border-l-4 border-l-red-400"
+            : isNeedsRepair
+            ? "border-amber-100 border-l-4 border-l-amber-400"
             : "border-gray-100"
         }`}
       >
@@ -215,13 +221,18 @@ export default function EquipmentDetailPage({
         <div className="p-3">
           <div className="flex items-start justify-between">
             <div className="min-w-0 flex-1">
-              <p className={`text-[13px] font-semibold truncate ${isUnresolved ? "text-gray-900" : "text-gray-700"}`}>
-                {log.symptom ?? "증상 미입력"}
-              </p>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <p className={`text-[13px] font-semibold truncate ${isDowntime || isNeedsRepair ? "text-gray-900" : "text-gray-700"}`}>
+                  {log.symptom ?? "증상 미입력"}
+                </p>
+                <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${repairStatusBadgeClass(log.status)}`}>
+                  {log.status}
+                </span>
+              </div>
               <p className="text-[11px] text-gray-400 mt-0.5">
                 {log.occurredAt.split("T")[0]} · {log.operator}
-                {isUnresolved && (
-                  <span className="ml-1 text-red-500 font-medium">
+                {(isDowntime || isNeedsRepair) && (
+                  <span className={`ml-1 font-medium ${isDowntime ? "text-red-500" : "text-amber-600"}`}>
                     · {daysSince(log.occurredAt)}일 경과
                   </span>
                 )}
@@ -339,9 +350,13 @@ export default function EquipmentDetailPage({
             )}
           </p>
         </div>
-        {unresolvedRepairs.length > 0 ? (
+        {inProgressRepairs.length > 0 ? (
           <span className="rounded-full bg-red-100 text-red-700 text-[11px] font-semibold px-2.5 py-1">
-            수리 중 {unresolvedRepairs.length}건
+            수리 중 {inProgressRepairs.length}건
+          </span>
+        ) : needsRepairs.length > 0 ? (
+          <span className="rounded-full bg-amber-100 text-amber-700 text-[11px] font-semibold px-2.5 py-1">
+            수리 필요 {needsRepairs.length}건
           </span>
         ) : (
           <span className="rounded-full bg-green-100 text-green-700 text-[11px] font-semibold px-2.5 py-1">
@@ -362,9 +377,9 @@ export default function EquipmentDetailPage({
         >
           <Wrench size={15} />
           장비 수리
-          {unresolvedRepairs.length > 0 && (
-            <span className="bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5">
-              {unresolvedRepairs.length}
+          {openRepairs.length > 0 && (
+            <span className={`text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 ${inProgressRepairs.length > 0 ? "bg-red-500" : "bg-amber-500"}`}>
+              {openRepairs.length}
             </span>
           )}
         </button>
@@ -397,10 +412,17 @@ export default function EquipmentDetailPage({
             </button>
           </div>
 
-          {unresolvedRepairs.length > 0 && (
+          {inProgressRepairs.length > 0 && (
             <div className="space-y-2">
               <p className="text-[11px] font-semibold text-red-500 uppercase tracking-wider">처리 중</p>
-              {unresolvedRepairs.map(renderRepairCard)}
+              {inProgressRepairs.map(renderRepairCard)}
+            </div>
+          )}
+
+          {needsRepairs.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-[11px] font-semibold text-amber-600 uppercase tracking-wider">수리 필요 (가동 중)</p>
+              {needsRepairs.map(renderRepairCard)}
             </div>
           )}
 

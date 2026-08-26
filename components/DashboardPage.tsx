@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Package, AlertTriangle, Wind, Sparkles, ShieldAlert, Activity } from "lucide-react";
+import { Package, AlertTriangle, Wind, Sparkles, ShieldAlert, Activity, Wrench } from "lucide-react";
 import type { Equipment } from "@/lib/types";
 import { getPmStatusLabel, getPmStatusColor, PM_CONFIG } from "@/lib/pmConfig";
+import { repairStatusBadgeClass } from "@/lib/repairStatus";
 
 interface EquipmentDashboard {
   id: number;
@@ -11,7 +12,9 @@ interface EquipmentDashboard {
   category: string | null;
   isVentTarget: boolean;
   unresolvedRepairCount: number;
-  unresolvedRepairs: { id: number; symptom: string | null; operator: string; occurredAt: string }[];
+  inProgressRepairCount: number;
+  needsRepairCount: number;
+  unresolvedRepairs: { id: number; symptom: string | null; operator: string; status: string; occurredAt: string }[];
   lastVentDate?: string;
   lastCleaningDate?: string;
   ventStatus: "normal" | "caution" | "overdue";
@@ -26,6 +29,8 @@ interface EquipmentDashboard {
 interface DashboardData {
   equipments: EquipmentDashboard[];
   totalUnresolved: number;
+  totalInProgress: number;
+  totalNeedsRepair: number;
   pmIssueCount: number;
 }
 
@@ -57,8 +62,8 @@ export default function DashboardPage({
   if (loading) {
     return (
       <div className="space-y-5 animate-pulse">
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
+          {[...Array(5)].map((_, i) => (
             <div key={i} className="h-20 bg-gray-100 rounded-xl" />
           ))}
         </div>
@@ -75,7 +80,7 @@ export default function DashboardPage({
     );
   }
 
-  const { equipments, totalUnresolved, pmIssueCount } = data;
+  const { equipments, totalInProgress, totalNeedsRepair, pmIssueCount } = data;
   const pmIssueEquipments = equipments.filter(
     (e) => e.ventStatus !== "normal" || e.cleaningStatus !== "normal"
   );
@@ -83,9 +88,13 @@ export default function DashboardPage({
     e.unresolvedRepairs.map((r) => ({ ...r, equipmentName: e.name }))
   );
 
-  // 미해결 수리 장비 이름 목록
-  const unresolvedEquipNames = equipments
-    .filter((e) => e.unresolvedRepairCount > 0)
+  // 수리 중 / 수리 필요 장비 이름 목록
+  const inProgressEquipNames = equipments
+    .filter((e) => e.inProgressRepairCount > 0)
+    .map((e) => e.name)
+    .join(" · ");
+  const needsRepairEquipNames = equipments
+    .filter((e) => e.needsRepairCount > 0)
     .map((e) => e.name)
     .join(" · ");
 
@@ -110,11 +119,18 @@ export default function DashboardPage({
       icon: <Package size={18} className="text-blue-600" />,
     },
     {
-      label: "미해결 수리",
-      value: totalUnresolved,
-      sub: unresolvedEquipNames || "없음",
+      label: "수리 중",
+      value: totalInProgress,
+      sub: inProgressEquipNames || "없음",
       iconBg: "bg-red-100",
       icon: <AlertTriangle size={18} className="text-red-600" />,
+    },
+    {
+      label: "수리 필요",
+      value: totalNeedsRepair,
+      sub: needsRepairEquipNames || "없음",
+      iconBg: "bg-amber-100",
+      icon: <Wrench size={18} className="text-amber-600" />,
     },
     {
       label: "정기 점검 필요",
@@ -150,7 +166,7 @@ export default function DashboardPage({
   return (
     <div className="space-y-5">
       {/* 통계 카드 */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
         {stats.map((s) => (
           <div
             key={s.label}
@@ -219,13 +235,16 @@ export default function DashboardPage({
           {equipments.map((eq) => {
             const ventColor = getPmStatusColor(eq.ventStatus);
             const cleaningColor = getPmStatusColor(eq.cleaningStatus);
-            const hasIssue = eq.unresolvedRepairCount > 0;
+            const isDowntime = eq.inProgressRepairCount > 0;
+            const isNeedsRepair = !isDowntime && eq.needsRepairCount > 0;
             return (
               <div
                 key={eq.id}
                 className={`rounded-xl border bg-white p-4 shadow-sm cursor-pointer hover:shadow-md transition-shadow flex flex-col ${
-                  hasIssue
+                  isDowntime
                     ? "border-l-4 border-l-red-400 border-t-gray-100 border-r-gray-100 border-b-gray-100"
+                    : isNeedsRepair
+                    ? "border-l-4 border-l-amber-400 border-t-gray-100 border-r-gray-100 border-b-gray-100"
                     : "border-gray-100"
                 }`}
                 onClick={() => onNavigateEquipment(eq as unknown as Equipment)}
@@ -236,9 +255,13 @@ export default function DashboardPage({
                     <p className="text-[11px] text-gray-400">{eq.category}</p>
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    {hasIssue ? (
+                    {isDowntime ? (
                       <span className="rounded-full bg-red-100 text-red-700 px-2 py-0.5 text-[10px] font-medium">
                         수리 중
+                      </span>
+                    ) : isNeedsRepair ? (
+                      <span className="rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 text-[10px] font-medium">
+                        수리 필요
                       </span>
                     ) : (
                       <span className="rounded-full bg-green-100 text-green-700 px-2 py-0.5 text-[10px] font-medium">
@@ -339,13 +362,14 @@ export default function DashboardPage({
       {/* 미해결 수리 목록 */}
       {unresolvedRepairs.length > 0 && (
         <div>
-          <h2 className="mb-3 text-[14px] font-bold text-gray-900">미해결 수리</h2>
+          <h2 className="mb-3 text-[14px] font-bold text-gray-900">미완료 수리</h2>
           <div className="overflow-x-auto rounded-xl border border-gray-100 bg-white shadow-sm">
             <table className="w-full text-left text-[12px]">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
                   <th className="px-4 py-2.5 font-semibold text-gray-500">장비</th>
                   <th className="px-4 py-2.5 font-semibold text-gray-500">증상</th>
+                  <th className="px-4 py-2.5 font-semibold text-gray-500">상태</th>
                   <th className="hidden sm:table-cell px-4 py-2.5 font-semibold text-gray-500">담당자</th>
                   <th className="hidden sm:table-cell px-4 py-2.5 font-semibold text-gray-500">발생일</th>
                   <th className="px-4 py-2.5 font-semibold text-gray-500">경과일</th>
@@ -356,10 +380,15 @@ export default function DashboardPage({
                   <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50">
                     <td className="px-4 py-2.5 font-medium text-gray-900">{r.equipmentName}</td>
                     <td className="px-4 py-2.5 text-gray-600">{r.symptom ?? "–"}</td>
+                    <td className="px-4 py-2.5">
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${repairStatusBadgeClass(r.status)}`}>
+                        {r.status}
+                      </span>
+                    </td>
                     <td className="hidden sm:table-cell px-4 py-2.5 text-gray-600">{r.operator}</td>
                     <td className="hidden sm:table-cell px-4 py-2.5 text-gray-600">{r.occurredAt.split("T")[0]}</td>
                     <td className="px-4 py-2.5">
-                      <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-600">
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${r.status === "처리중" ? "bg-red-50 text-red-600" : "bg-amber-50 text-amber-600"}`}>
                         {daysSince(r.occurredAt)}일
                       </span>
                     </td>

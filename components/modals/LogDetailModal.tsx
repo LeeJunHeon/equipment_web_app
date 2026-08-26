@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { X, Trash2 as TrashIcon, ChevronLeft, ChevronRight } from "lucide-react";
-import type { EventType, EquipmentLog } from "@/lib/types";
+import type { EventType, EquipmentLog, StatusType } from "@/lib/types";
+import { repairStatusBadgeClass } from "@/lib/repairStatus";
 import { assetPath } from "@/lib/asset-path";
 
 interface LogDetailModalProps {
@@ -52,18 +53,18 @@ export default function LogDetailModal({ isOpen, onClose, onSave, logId, logs, i
 
   const visiblePhotos = (log.photos || []).filter((p) => !deletedPhotoIds.has(p.id));
 
-  async function handleComplete() {
+  async function handleStatusChange(next: StatusType) {
     setActionLoading(true);
     try {
       await fetch("/api/logs", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: log!.id, status: "완료" }),
+        body: JSON.stringify({ id: log!.id, status: next }),
       });
       onSave?.();
       onClose();
     } catch (error) {
-      console.error("Complete error:", error);
+      console.error("Status change error:", error);
     } finally {
       setActionLoading(false);
     }
@@ -122,7 +123,7 @@ export default function LogDetailModal({ isOpen, onClose, onSave, logId, logs, i
             <div>
               <div className="mb-1 flex items-center gap-2">
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${badge.cls}`}>{badge.label}</span>
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${log.status === "처리중" ? "bg-yellow-100 text-yellow-700" : "bg-green-100 text-green-700"}`}>{log.status}</span>
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${repairStatusBadgeClass(log.status)}`}>{log.status}</span>
               </div>
               <p className="text-[14px] font-bold text-gray-900">{log.equipmentName} {log.symptom ? `— ${log.symptom}` : ""}</p>
               <p className="text-[11px] text-gray-500">{log.operator} · {formatDate(log.occurredAt)}</p>
@@ -149,6 +150,12 @@ export default function LogDetailModal({ isOpen, onClose, onSave, logId, logs, i
                       : "-"}
                   </span></div>
                   {log.isExternal && (<div className="grid grid-cols-[100px_1fr] border-b border-gray-50"><span className="bg-gray-50 px-3 py-2 font-medium text-gray-500">외부 업체</span><span className="px-3 py-2 text-gray-800">{log.vendorName || "-"}</span></div>)}
+                  {log.repairStartedAt && (
+                    <div className="grid grid-cols-[100px_1fr] border-b border-gray-50">
+                      <span className="bg-gray-50 px-3 py-2 font-medium text-gray-500">수리 시작</span>
+                      <span className="px-3 py-2 text-gray-800">{formatDate(log.repairStartedAt)}</span>
+                    </div>
+                  )}
                   {log.status === "완료" && (
                     <div className="grid grid-cols-[100px_1fr] border-b border-gray-50">
                       <span className="bg-gray-50 px-3 py-2 font-medium text-gray-500">완료 일시</span>
@@ -236,8 +243,11 @@ export default function LogDetailModal({ isOpen, onClose, onSave, logId, logs, i
             {isAdmin && (
               <button onClick={handleDelete} disabled={actionLoading} className="rounded-lg border border-red-200 px-4 py-2 text-[12px] font-medium text-red-600 hover:bg-red-50 disabled:opacity-50">삭제</button>
             )}
-            {log.status === "처리중" && (
-              <button onClick={handleComplete} disabled={actionLoading} className="rounded-lg bg-blue-600 px-4 py-2 text-[12px] font-medium text-white hover:bg-blue-700 disabled:opacity-50">완료처리</button>
+            {log.status === "수리필요" && (
+              <button onClick={() => handleStatusChange("처리중")} disabled={actionLoading} className="rounded-lg border border-red-200 px-4 py-2 text-[12px] font-medium text-red-600 hover:bg-red-50 disabled:opacity-50">수리 시작</button>
+            )}
+            {log.status !== "완료" && (
+              <button onClick={() => handleStatusChange("완료")} disabled={actionLoading} className="rounded-lg bg-blue-600 px-4 py-2 text-[12px] font-medium text-white hover:bg-blue-700 disabled:opacity-50">완료처리</button>
             )}
           </div>
         </div>

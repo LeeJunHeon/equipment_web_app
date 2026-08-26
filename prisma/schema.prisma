@@ -33,6 +33,7 @@ model EquipmentLog {
   occurredAt    DateTime  @map("occurred_at")
   operator      String    @db.VarChar(50)
   description   String?   @db.Text
+  // 수리: 수리필요 | 처리중 | 완료   /   벤트·클리닝: 항상 완료
   status        String    @default("처리중") @db.VarChar(20)
 
   symptom       String?   @db.Text
@@ -45,6 +46,8 @@ model EquipmentLog {
   cleaningType      String?   @db.VarChar(50) @map("cleaning_type")
   nextScheduledAt   DateTime? @map("next_scheduled_at") @db.Date
 
+  // 실제로 장비를 세운 시각. NULL이면 장비를 세운 적이 없다는 뜻 → 비가동 0.
+  repairStartedAt DateTime? @map("repair_started_at")
   completedAt   DateTime? @map("completed_at")
   createdAt     DateTime  @default(now()) @map("created_at")
 
