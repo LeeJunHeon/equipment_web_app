@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/app/generated/prisma";
 import { isAdmin } from "@/lib/auth-utils";
 import { nowKst, parseKst } from "@/lib/kst";
 import { isRepairStatus } from "@/lib/repairStatus";
+import { findOpenDowntime } from "@/lib/downtime";
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,6 +24,10 @@ export async function GET(request: NextRequest) {
       include: {
         equipment: { select: { name: true } },
         photos: { select: { id: true, fileName: true, fileSize: true }, orderBy: { createdAt: "asc" } },
+        downtimes: {
+          select: { id: true, startedAt: true, endedAt: true },
+          orderBy: { startedAt: "asc" },
+        },
       },
     });
 
@@ -70,11 +76,19 @@ export async function POST(request: NextRequest) {
       ? (isRepairStatus(status) ? status : "처리중")
       : "완료";
 
-    // repair_started_at: "실제로 장비를 세운 시각".
-    // 신규 등록 시 처리중/완료는 발생 시점에 세운 것으로 간주하고,
-    // 수리필요는 아직 세우지 않았으므로 null.
-    const repairStartedAt =
-      isRepair && finalStatus !== "수리필요" ? parsedOccurredAt : null;
+    const parsedCompletedAt =
+      isRepair && finalStatus === "완료"
+        ? (completedAt ? parseKst(completedAt) : nowKst())
+        : null;
+
+    // 등록 시점의 정지 구간.
+    // - 수리필요: 아직 세운 적 없음 → 구간 없음
+    // - 처리중  : 발생 시점부터 정지 중 → 열린 구간 1개
+    // - 완료    : 발생 시점부터 완료 시점까지 정지했던 것으로 본다 → 닫힌 구간 1개
+    const initialDowntimes =
+      isRepair && finalStatus !== "수리필요"
+        ? [{ startedAt: parsedOccurredAt, endedAt: parsedCompletedAt }]
+        : [];
 
     const log = await prisma.equipmentLog.create({
       data: {
@@ -84,13 +98,12 @@ export async function POST(request: NextRequest) {
         operator,
         description: description || null,
         status: finalStatus,
-        repairStartedAt,
         // completed_at은 수리(repair) 전용. vent/cleaning은 시작~종료 구간이 없는
         // 순간 이벤트라 occurred_at 하나로 충분하므로 항상 null.
-        completedAt:
-          isRepair && finalStatus === "완료"
-            ? (completedAt ? parseKst(completedAt) : nowKst())
-            : null,
+        completedAt: parsedCompletedAt,
+        ...(initialDowntimes.length > 0
+          ? { downtimes: { create: initialDowntimes } }
+          : {}),
         symptom: symptom || null,
         replacedParts: replacedParts || null,
         isExternal: isExternal ?? false,
@@ -102,6 +115,10 @@ export async function POST(request: NextRequest) {
       include: {
         equipment: { select: { name: true } },
         photos: { select: { id: true, fileName: true, fileSize: true }, orderBy: { createdAt: "asc" } },
+        downtimes: {
+          select: { id: true, startedAt: true, endedAt: true },
+          orderBy: { startedAt: "asc" },
+        },
       },
     });
 
@@ -135,46 +152,83 @@ export async function PATCH(request: NextRequest) {
     }
 
     const data: Record<string, unknown> = {};
+    // 정지 구간 변경은 아래 로그 update 와 한 트랜잭션으로 함께 커밋한다.
+    const pendingOps: Prisma.PrismaPromise<unknown>[] = [];
+
     if (updateData.status !== undefined) {
       if (!isRepairStatus(updateData.status)) {
         return NextResponse.json({ error: "유효한 상태가 아닙니다." }, { status: 400 });
       }
-      data.status = updateData.status;
 
       const current = await prisma.equipmentLog.findUnique({
         where: { id },
-        select: { repairStartedAt: true },
+        select: {
+          eventType: true,
+          downtimes: { select: { id: true, startedAt: true, endedAt: true } },
+        },
       });
       if (!current) {
         return NextResponse.json({ error: "이력을 찾을 수 없습니다." }, { status: 404 });
       }
+      // vent/cleaning 은 시작~종료 구간이 없는 순간 이벤트라 항상 "완료"만 허용한다.
+      if (current.eventType !== "repair" && updateData.status !== "완료") {
+        return NextResponse.json(
+          { error: "수리 이력만 상태를 변경할 수 있습니다." },
+          { status: 400 }
+        );
+      }
 
+      data.status = updateData.status;
+      const open = findOpenDowntime(current.downtimes);
+      const now = nowKst();
+
+      // 정지 구간은 절대 삭제하지 않는다. 닫거나(ended_at 설정) 새로 연다(행 추가).
       if (updateData.status === "수리필요") {
-        // 되돌리기: 아직 세운 적 없는 상태로 초기화 → 비가동 0
-        data.repairStartedAt = null;
+        // 장비를 다시 돌리는 것 → 열린 구간이 있으면 지금 시점으로 닫는다.
+        // 이전에 세웠던 구간은 그대로 보존된다.
         data.completedAt = null;
+        if (open) {
+          pendingOps.push(
+            prisma.equipmentDowntime.update({
+              where: { id: open.id },
+              data: { endedAt: now },
+            })
+          );
+        }
       } else if (updateData.status === "처리중") {
-        // 수리 시작. 이미 세운 기록이 있으면 유지, 없으면 지금부터 정지로 본다.
-        data.repairStartedAt =
-          current.repairStartedAt ??
-          (updateData.repairStartedAt ? parseKst(updateData.repairStartedAt) : nowKst());
+        // 수리 시작 → 열린 구간이 없으면 새로 연다. 이미 열려 있으면 그대로 둔다.
         data.completedAt = null;
+        if (!open) {
+          pendingOps.push(
+            prisma.equipmentDowntime.create({
+              data: { logId: id, startedAt: now, endedAt: null },
+            })
+          );
+        }
       } else {
-        // 완료. repairStartedAt이 null이면(수리필요 → 완료 직행)
-        // 장비를 세운 적이 없다는 뜻이므로 null 그대로 두어 비가동 0을 유지한다.
-        data.completedAt = updateData.completedAt
+        // 완료 → 열린 구간이 있으면 완료 시각으로 닫는다.
+        // 열린 구간이 없으면(수리필요에서 바로 완료) 새 구간을 만들지 않는다.
+        // 과거에 닫힌 구간이 있으면 그대로 남아 비가동에 계속 반영된다.
+        const completedAtValue = updateData.completedAt
           ? parseKst(updateData.completedAt)
-          : nowKst();
+          : now;
+        data.completedAt = completedAtValue;
+        if (open) {
+          // 완료 시각이 시작보다 이르면 데이터가 뒤집히므로 시작 시각으로 보정한다.
+          const endValue =
+            completedAtValue.getTime() < open.startedAt.getTime()
+              ? open.startedAt
+              : completedAtValue;
+          pendingOps.push(
+            prisma.equipmentDowntime.update({
+              where: { id: open.id },
+              data: { endedAt: endValue },
+            })
+          );
+        }
       }
-    } else {
-      if (updateData.completedAt !== undefined) {
-        data.completedAt = updateData.completedAt ? parseKst(updateData.completedAt) : null;
-      }
-      if (updateData.repairStartedAt !== undefined) {
-        data.repairStartedAt = updateData.repairStartedAt
-          ? parseKst(updateData.repairStartedAt)
-          : null;
-      }
+    } else if (updateData.completedAt !== undefined) {
+      data.completedAt = updateData.completedAt ? parseKst(updateData.completedAt) : null;
     }
     if (updateData.description !== undefined) data.description = updateData.description;
     if (updateData.operator !== undefined) data.operator = updateData.operator;
@@ -187,14 +241,21 @@ export async function PATCH(request: NextRequest) {
     if (updateData.cleaningType !== undefined) data.cleaningType = updateData.cleaningType;
     if (updateData.nextScheduledAt !== undefined) data.nextScheduledAt = updateData.nextScheduledAt ? new Date(updateData.nextScheduledAt) : null;
 
-    const log = await prisma.equipmentLog.update({
+    const logUpdate = prisma.equipmentLog.update({
       where: { id },
       data,
       include: {
         equipment: { select: { name: true } },
         photos: { select: { id: true, fileName: true, fileSize: true }, orderBy: { createdAt: "asc" } },
+        downtimes: {
+          select: { id: true, startedAt: true, endedAt: true },
+          orderBy: { startedAt: "asc" },
+        },
       },
     });
+
+    const results = await prisma.$transaction([...pendingOps, logUpdate]);
+    const log = results[results.length - 1] as Awaited<typeof logUpdate>;
 
     return NextResponse.json({ ...log, equipmentName: log.equipment.name, equipment: undefined });
   } catch (error) {

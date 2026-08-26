@@ -46,16 +46,31 @@ model EquipmentLog {
   cleaningType      String?   @db.VarChar(50) @map("cleaning_type")
   nextScheduledAt   DateTime? @map("next_scheduled_at") @db.Date
 
-  // 실제로 장비를 세운 시각. NULL이면 장비를 세운 적이 없다는 뜻 → 비가동 0.
-  repairStartedAt DateTime? @map("repair_started_at")
   completedAt   DateTime? @map("completed_at")
   createdAt     DateTime  @default(now()) @map("created_at")
 
-  equipment Equipment        @relation(fields: [equipmentId], references: [id])
+  equipment Equipment           @relation(fields: [equipmentId], references: [id])
   photos    EquipmentPhoto[]
   entries   EquipmentLogEntry[]
+  downtimes EquipmentDowntime[]
 
   @@map("equipment_logs")
+  @@schema("equipment")
+}
+
+/// 장비가 실제로 정지해 있던 구간. 한 수리 건에 여러 개가 달릴 수 있다.
+/// ended_at 이 NULL 이면 지금도 정지 중이다. 상태 전이 시 삭제하지 않고 닫기만 한다.
+model EquipmentDowntime {
+  id        Int       @id @default(autoincrement())
+  logId     Int       @map("log_id")
+  startedAt DateTime  @map("started_at")
+  endedAt   DateTime? @map("ended_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  log EquipmentLog @relation(fields: [logId], references: [id], onDelete: Cascade)
+
+  @@index([logId])
+  @@map("equipment_downtimes")
   @@schema("equipment")
 }
 

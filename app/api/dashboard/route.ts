@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getPmStatus } from "@/lib/pmConfig";
 import { nowKst, monthStartKst } from "@/lib/kst";
+import { mergedDowntimeMs } from "@/lib/downtime";
 
 export async function GET() {
   try {
@@ -24,8 +25,8 @@ export async function GET() {
             status: true,
             symptom: true,
             operator: true,
-            repairStartedAt: true,
             completedAt: true,
+            downtimes: { select: { startedAt: true, endedAt: true } },
           },
         },
       },
@@ -57,50 +58,11 @@ export async function GET() {
       const monthStartMs = thisMonthStart.getTime();
       const nowMs = now.getTime();
 
-      // 비가동 계산은 "실제로 장비를 세운 시각"(repairStartedAt) 기준이다.
-      // repairStartedAt이 null이면 장비를 세운 적이 없다는 뜻(수리필요 상태이거나
-      // 수리필요 → 완료 직행)이므로 비가동에 전혀 반영하지 않는다.
-      const relevantRepairs = repairLogs.filter((r) => {
-        if (!r.repairStartedAt) return false;
-        if (r.status === "수리필요") return false;      // 가동 중 → 비가동 아님
-        if (r.status === "처리중") return true;         // 지금도 정지 중
-        if (!r.completedAt) return false;
-        return r.completedAt.getTime() >= monthStartMs; // 이번 달에 걸친 완료 건만
-      });
-
-      // 각 수리의 비가동 구간 [startMs, endMs] 계산
-      const ranges: [number, number][] = [];
-      for (const repair of relevantRepairs) {
-        const startedMs = repair.repairStartedAt!.getTime();
-        const startMs = Math.max(startedMs, monthStartMs);
-        let endMs: number;
-
-        if (repair.status === "처리중") {
-          endMs = nowMs;
-        } else if (repair.completedAt) {
-          endMs = Math.min(repair.completedAt.getTime(), nowMs);
-        } else {
-          continue;
-        }
-
-        if (endMs > startMs) {
-          ranges.push([startMs, endMs]);
-        }
-      }
-
-      // 겹치는 구간 병합 (이중 계산 방지)
-      ranges.sort((a, b) => a[0] - b[0]);
-      const merged: [number, number][] = [];
-      for (const [s, e] of ranges) {
-        if (merged.length && merged[merged.length - 1][1] >= s) {
-          merged[merged.length - 1][1] = Math.max(merged[merged.length - 1][1], e);
-        } else {
-          merged.push([s, e]);
-        }
-      }
-
-      // ms 단위로 비가동 시간 계산 → 가동률(%), 비가동 시간(시간 단위)
-      const downtimeMs = merged.reduce((sum, [s, e]) => sum + (e - s), 0);
+      // 비가동은 정지 구간(equipment_downtimes) 만으로 계산한다.
+      // 상태는 구간의 열림/닫힘에 이미 반영돼 있으므로 따로 거르지 않는다.
+      // 이번 달 밖의 구간은 잘라내기 과정에서 자동으로 걸러진다.
+      const allRanges = repairLogs.flatMap((l) => l.downtimes);
+      const downtimeMs = mergedDowntimeMs(allRanges, monthStartMs, nowMs);
       const uptimePercent =
         monthTotalMs > 0
           ? Math.max(0, Math.round((1 - downtimeMs / monthTotalMs) * 100))

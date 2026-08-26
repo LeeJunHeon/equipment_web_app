@@ -44,8 +44,14 @@ export interface EquipmentLog {
   ventReason?: string | null;
   cleaningType?: string | null;
   nextScheduledAt?: string | null;
-  repairStartedAt?: string | null;
   completedAt?: string | null;
+  downtimes?: DowntimeInterval[];
+}
+
+export interface DowntimeInterval {
+  id: number;
+  startedAt: string;
+  endedAt: string | null;
 }
 
 export interface EntryPhoto {

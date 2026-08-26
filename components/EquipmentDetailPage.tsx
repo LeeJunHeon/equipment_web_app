@@ -237,6 +237,20 @@ export default function EquipmentDetailPage({
                   </span>
                 )}
               </p>
+              {/* 카드용 근사치 — 월 경계 자르기나 구간 병합은 하지 않는다.
+                  정확한 이번 달 비가동은 대시보드가 mergedDowntimeMs 로 계산한다. */}
+              {(log.downtimes?.length ?? 0) > 0 && (
+                <p className="text-[10px] text-gray-400 mt-0.5">
+                  정지 {log.downtimes!.length}회 · 누적 {(() => {
+                    const ms = log.downtimes!.reduce((sum, d) => {
+                      const start = new Date(d.startedAt).getTime();
+                      const end = d.endedAt ? new Date(d.endedAt).getTime() : Date.now();
+                      return sum + Math.max(0, end - start);
+                    }, 0);
+                    return Math.round(ms / 3600000);
+                  })()}h
+                </p>
+              )}
             </div>
             <div className="flex items-center gap-1.5 ml-2 shrink-0">
               <button

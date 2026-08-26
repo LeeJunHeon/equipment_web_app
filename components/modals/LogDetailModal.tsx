@@ -150,10 +150,16 @@ export default function LogDetailModal({ isOpen, onClose, onSave, logId, logs, i
                       : "-"}
                   </span></div>
                   {log.isExternal && (<div className="grid grid-cols-[100px_1fr] border-b border-gray-50"><span className="bg-gray-50 px-3 py-2 font-medium text-gray-500">외부 업체</span><span className="px-3 py-2 text-gray-800">{log.vendorName || "-"}</span></div>)}
-                  {log.repairStartedAt && (
+                  {(log.downtimes?.length ?? 0) > 0 && (
                     <div className="grid grid-cols-[100px_1fr] border-b border-gray-50">
-                      <span className="bg-gray-50 px-3 py-2 font-medium text-gray-500">수리 시작</span>
-                      <span className="px-3 py-2 text-gray-800">{formatDate(log.repairStartedAt)}</span>
+                      <span className="bg-gray-50 px-3 py-2 font-medium text-gray-500">정지 이력</span>
+                      <span className="px-3 py-2 text-gray-800">
+                        {log.downtimes!.map((d) => (
+                          <span key={d.id} className="block">
+                            {formatDate(d.startedAt)} ~ {d.endedAt ? formatDate(d.endedAt) : "정지 중"}
+                          </span>
+                        ))}
+                      </span>
                     </div>
                   )}
                   {log.status === "완료" && (
@@ -244,7 +250,9 @@ export default function LogDetailModal({ isOpen, onClose, onSave, logId, logs, i
               <button onClick={handleDelete} disabled={actionLoading} className="rounded-lg border border-red-200 px-4 py-2 text-[12px] font-medium text-red-600 hover:bg-red-50 disabled:opacity-50">삭제</button>
             )}
             {log.status === "수리필요" && (
-              <button onClick={() => handleStatusChange("처리중")} disabled={actionLoading} className="rounded-lg border border-red-200 px-4 py-2 text-[12px] font-medium text-red-600 hover:bg-red-50 disabled:opacity-50">수리 시작</button>
+              <button onClick={() => handleStatusChange("처리중")} disabled={actionLoading} className="rounded-lg border border-red-200 px-4 py-2 text-[12px] font-medium text-red-600 hover:bg-red-50 disabled:opacity-50">
+                {(log.downtimes?.length ?? 0) > 0 ? "수리 재시작" : "수리 시작"}
+              </button>
             )}
             {log.status !== "완료" && (
               <button onClick={() => handleStatusChange("완료")} disabled={actionLoading} className="rounded-lg bg-blue-600 px-4 py-2 text-[12px] font-medium text-white hover:bg-blue-700 disabled:opacity-50">완료처리</button>
