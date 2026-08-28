@@ -71,7 +71,7 @@ export default function LogDetailModal({ isOpen, onClose, onSave, logId, logs, i
   }
 
   async function handleDelete() {
-    if (!confirm("정말 삭제하시겠습니까?")) return;
+    if (!confirm("이 수리 이력을 삭제합니다.\n정지 이력과 사진도 함께 사라지며 되돌릴 수 없습니다.")) return;
     setActionLoading(true);
     try {
       await fetch("/api/logs", {
@@ -246,31 +246,38 @@ export default function LogDetailModal({ isOpen, onClose, onSave, logId, logs, i
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 border-t border-gray-100 px-5 py-3">
-            <button onClick={onClose} className="rounded-lg border border-gray-200 px-4 py-2 text-[12px] font-medium text-gray-600 hover:bg-gray-50">닫기</button>
-            {isAdmin && (
-              <button onClick={handleDelete} disabled={actionLoading} className="rounded-lg border border-red-200 px-4 py-2 text-[12px] font-medium text-red-600 hover:bg-red-50 disabled:opacity-50">삭제</button>
-            )}
-            {log.status === REPAIR_STATUS.RUNNING && (
-              <button onClick={() => handleStatusChange(REPAIR_STATUS.STOPPED)} disabled={actionLoading} className="rounded-lg border border-red-200 px-4 py-2 text-[12px] font-medium text-red-600 hover:bg-red-50 disabled:opacity-50">
-                {(log.downtimes?.length ?? 0) > 0 ? "수리 재시작" : "수리 시작"}
-              </button>
-            )}
-            {log.status === REPAIR_STATUS.STOPPED && (
-              <button
-                onClick={() => {
-                  if (!confirm("장비를 다시 가동하고 '가동 중 (수리 필요)' 상태로 전환합니다.\n지금까지의 정지 구간은 여기서 종료되어 기록에 남습니다.")) return;
-                  handleStatusChange(REPAIR_STATUS.RUNNING);
-                }}
-                disabled={actionLoading}
-                className="rounded-lg border border-amber-200 px-4 py-2 text-[12px] font-medium text-amber-700 hover:bg-amber-50 disabled:opacity-50"
-              >
-                가동 재개
-              </button>
-            )}
-            {log.status !== REPAIR_STATUS.DONE && (
-              <button onClick={() => handleStatusChange(REPAIR_STATUS.DONE)} disabled={actionLoading} className="rounded-lg bg-blue-600 px-4 py-2 text-[12px] font-medium text-white hover:bg-blue-700 disabled:opacity-50">완료처리</button>
-            )}
+          <div className="flex items-center justify-between gap-2 border-t border-gray-100 px-5 py-3">
+            {/* 좌측: 이 건을 바꾸지 않는 동작. 상태 변경 버튼과 떨어뜨려 오클릭을 막는다. */}
+            <div className="flex gap-2">
+              <button onClick={onClose} className="rounded-lg border border-gray-200 px-4 py-2 text-[12px] font-medium text-gray-600 hover:bg-gray-50">닫기</button>
+              {isAdmin && (
+                <button onClick={handleDelete} disabled={actionLoading} className="rounded-lg border border-red-200 px-4 py-2 text-[12px] font-medium text-red-600 hover:bg-red-50 disabled:opacity-50">삭제</button>
+              )}
+            </div>
+
+            {/* 우측: 상태 변경. 장비 관점을 주어로, 수리 관점을 괄호로 병기한다. */}
+            <div className="flex flex-wrap justify-end gap-2">
+              {log.status === REPAIR_STATUS.RUNNING && (
+                <button onClick={() => handleStatusChange(REPAIR_STATUS.STOPPED)} disabled={actionLoading} className="rounded-lg border border-red-200 px-4 py-2 text-[12px] font-medium text-red-600 hover:bg-red-50 disabled:opacity-50">
+                  {(log.downtimes?.length ?? 0) > 0 ? "수리 재시작 (장비 정지)" : "수리 시작 (장비 정지)"}
+                </button>
+              )}
+              {log.status === REPAIR_STATUS.STOPPED && (
+                <button
+                  onClick={() => {
+                    if (!confirm("장비를 다시 가동합니다. 수리는 계속 진행 중인 상태로 남습니다.\n지금까지의 정지 구간은 여기서 종료되어 기록에 남습니다.")) return;
+                    handleStatusChange(REPAIR_STATUS.RUNNING);
+                  }}
+                  disabled={actionLoading}
+                  className="rounded-lg border border-amber-200 px-4 py-2 text-[12px] font-medium text-amber-700 hover:bg-amber-50 disabled:opacity-50"
+                >
+                  가동 재개 (수리 계속)
+                </button>
+              )}
+              {log.status !== REPAIR_STATUS.DONE && (
+                <button onClick={() => handleStatusChange(REPAIR_STATUS.DONE)} disabled={actionLoading} className="rounded-lg bg-blue-600 px-4 py-2 text-[12px] font-medium text-white hover:bg-blue-700 disabled:opacity-50">수리 완료</button>
+              )}
+            </div>
           </div>
         </div>
       </div>
