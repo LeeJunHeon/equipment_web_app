@@ -38,13 +38,17 @@ export async function GET() {
     return NextResponse.json(result);
   } catch (error) {
     console.error("GET /api/equipment error:", error);
-    return NextResponse.json({ error: "장비 목록 조회 ��패" }, { status: 500 });
+    return NextResponse.json({ error: "장비 목록 조회 실패" }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+
+    if (!(await isAdmin())) {
+      return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
+    }
     const { name, category, isVentTarget, description } = body;
 
     if (!name || !name.trim()) {
@@ -81,7 +85,7 @@ export async function PATCH(request: NextRequest) {
     const { id, name, category, isVentTarget, description } = body;
 
     if (!id) {
-      return NextResponse.json({ error: "장비 ID는 필수입��다." }, { status: 400 });
+      return NextResponse.json({ error: "장비 ID는 필수입니다." }, { status: 400 });
     }
 
     const equipment = await prisma.equipment.update({
@@ -115,7 +119,7 @@ export async function DELETE(request: NextRequest) {
     const { id } = body;
 
     if (!id) {
-      return NextResponse.json({ error: "장��� ID는 필수입니다." }, { status: 400 });
+      return NextResponse.json({ error: "장비 ID는 필수입니다." }, { status: 400 });
     }
 
     const equipment = await prisma.equipment.update({
@@ -126,6 +130,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json(equipment);
   } catch (error) {
     console.error("DELETE /api/equipment error:", error);
-    return NextResponse.json({ error: "장비 비��성화 실패" }, { status: 500 });
+    return NextResponse.json({ error: "장비 비활성화 실패" }, { status: 500 });
   }
 }
