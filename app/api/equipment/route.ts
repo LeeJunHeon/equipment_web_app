@@ -33,6 +33,7 @@ export async function GET() {
       needsRepairCount: eq.logs.filter((l) => l.status === REPAIR_STATUS.RUNNING).length,
       ventIntervalDays: eq.ventIntervalDays,
       cleaningIntervalDays: eq.cleaningIntervalDays,
+      chatNotify: eq.chatNotify,
     }));
 
     return NextResponse.json(result);
@@ -64,6 +65,8 @@ export async function POST(request: NextRequest) {
         description: description || null,
         ventIntervalDays: body.ventIntervalDays ?? 30,
         cleaningIntervalDays: body.cleaningIntervalDays ?? 14,
+        // 알림은 명시적으로 켠 경우에만. 잘못된 타입이 와도 켜지지 않게 boolean 만 인정한다.
+        chatNotify: typeof body.chatNotify === "boolean" ? body.chatNotify : false,
       },
     });
 
@@ -98,6 +101,7 @@ export async function PATCH(request: NextRequest) {
         ...(description !== undefined && { description }),
         ...(body.ventIntervalDays !== undefined && { ventIntervalDays: body.ventIntervalDays }),
         ...(body.cleaningIntervalDays !== undefined && { cleaningIntervalDays: body.cleaningIntervalDays }),
+        ...(typeof body.chatNotify === "boolean" && { chatNotify: body.chatNotify }),
       },
     });
 

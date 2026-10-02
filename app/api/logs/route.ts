@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/app/generated/prisma";
 import { isAdmin } from "@/lib/auth-utils";
 import { nowKst, parseKst } from "@/lib/kst";
 import { isRepairStatus, REPAIR_STATUS } from "@/lib/repairStatus";
 import { findOpenDowntime } from "@/lib/downtime";
+import { notifyNewEquipmentLog } from "@/lib/equipmentLogNotify";
 
 export async function GET(request: NextRequest) {
   try {
@@ -121,6 +122,9 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
+    // 구글챗 알림은 응답을 보낸 뒤 실행해 발송 지연·실패가 등록 결과에 영향을 주지 않게 한다.
+    after(() => notifyNewEquipmentLog(log.id));
 
     return NextResponse.json(
       { ...log, equipmentName: log.equipment.name, equipment: undefined },

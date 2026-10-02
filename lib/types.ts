@@ -19,6 +19,7 @@ export interface Equipment {
   needsRepairCount?: number;
   ventIntervalDays?: number;
   cleaningIntervalDays?: number;
+  chatNotify?: boolean;
 }
 
 export interface PhotoInfo {

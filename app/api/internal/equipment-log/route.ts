@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireEquipWriteAuth } from "@/lib/internal-write-auth";
 import { nowKst, parseKst } from "@/lib/kst";
 import { isRepairStatus, REPAIR_STATUS } from "@/lib/repairStatus";
+import { notifyNewEquipmentLog } from "@/lib/equipmentLogNotify";
 
 export const dynamic = "force-dynamic";
 
@@ -118,6 +119,9 @@ export async function POST(request: Request) {
       },
       include: { equipment: { select: { name: true } } },
     });
+
+    // 구글챗 알림은 응답을 보낸 뒤 실행해 발송 지연·실패가 등록 결과에 영향을 주지 않게 한다.
+    after(() => notifyNewEquipmentLog(log.id));
 
     return NextResponse.json(
       {

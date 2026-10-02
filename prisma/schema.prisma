@@ -18,6 +18,7 @@ model Equipment {
   isActive             Boolean  @default(true)  @map("is_active")
   ventIntervalDays     Int      @default(30)    @map("vent_interval_days")
   cleaningIntervalDays Int      @default(14)    @map("cleaning_interval_days")
+  chatNotify           Boolean  @default(false) @map("chat_notify")
   createdAt            DateTime @default(now()) @map("created_at")
 
   logs EquipmentLog[]

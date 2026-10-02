@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2, Check, X, Wind, Sparkles } from "lucide-react";
+import { Plus, Pencil, Trash2, Check, X, Wind, Sparkles, MessageSquare } from "lucide-react";
 import type { Equipment } from "@/lib/types";
 
 interface EquipmentSettingsPageProps {
@@ -21,6 +21,7 @@ export default function EquipmentSettingsPage({ isAdmin = false }: EquipmentSett
   const [formIsCleaning, setFormIsCleaning] = useState(true);
   const [formVentInterval, setFormVentInterval] = useState(30);
   const [formCleaningInterval, setFormCleaningInterval] = useState(14);
+  const [formChatNotify, setFormChatNotify] = useState(false);
 
   const [ventOptions, setVentOptions] = useState<{ id: number; label: string }[]>([]);
   const [cleaningOptions, setCleaningOptions] = useState<{ id: number; label: string }[]>([]);
@@ -135,6 +136,7 @@ export default function EquipmentSettingsPage({ isAdmin = false }: EquipmentSett
     setFormIsCleaning(true);
     setFormVentInterval(30);
     setFormCleaningInterval(14);
+    setFormChatNotify(false);
   }
 
   function startEdit(eq: Equipment) {
@@ -146,6 +148,7 @@ export default function EquipmentSettingsPage({ isAdmin = false }: EquipmentSett
     setFormIsCleaning(eq.isCleaningTarget ?? true);
     setFormVentInterval(eq.ventIntervalDays ?? 30);
     setFormCleaningInterval(eq.cleaningIntervalDays ?? 14);
+    setFormChatNotify(eq.chatNotify ?? false);
   }
 
   function cancelEdit() {
@@ -157,6 +160,7 @@ export default function EquipmentSettingsPage({ isAdmin = false }: EquipmentSett
     setFormIsCleaning(true);
     setFormVentInterval(30);
     setFormCleaningInterval(14);
+    setFormChatNotify(false);
   }
 
   async function saveEdit() {
@@ -168,6 +172,7 @@ export default function EquipmentSettingsPage({ isAdmin = false }: EquipmentSett
       isCleaningTarget: formIsCleaning,
       ventIntervalDays: formVentInterval,
       cleaningIntervalDays: formCleaningInterval,
+      chatNotify: formChatNotify,
     };
     try {
       if (isAdding) {
@@ -252,6 +257,19 @@ export default function EquipmentSettingsPage({ isAdmin = false }: EquipmentSett
           />
           <Sparkles size={13} className="text-green-500" />
           클리닝 기록 대상
+        </label>
+        <label
+          className="flex items-center gap-2 text-[13px] text-gray-700 cursor-pointer"
+          title="새 이력이 등록되면 구글챗 스페이스로 알림을 보냅니다"
+        >
+          <input
+            type="checkbox"
+            checked={formChatNotify}
+            onChange={(e) => setFormChatNotify(e.target.checked)}
+            className="rounded"
+          />
+          <MessageSquare size={13} className="text-indigo-500" />
+          구글챗 알림
         </label>
       </div>
 
@@ -350,6 +368,7 @@ export default function EquipmentSettingsPage({ isAdmin = false }: EquipmentSett
                   <th className="px-4 py-3 font-semibold text-gray-500 text-center">클리닝</th>
                   <th className="px-4 py-3 font-semibold text-gray-500 text-center">Vent 주기</th>
                   <th className="px-4 py-3 font-semibold text-gray-500 text-center">클리닝 주기</th>
+                  <th className="px-4 py-3 font-semibold text-gray-500 text-center">구글챗</th>
                   <th className="px-4 py-3 font-semibold text-gray-500 text-right">액션</th>
                 </tr>
               </thead>
@@ -375,6 +394,11 @@ export default function EquipmentSettingsPage({ isAdmin = false }: EquipmentSett
                       <td className="px-4 py-3 text-center text-gray-600">
                         {eq.cleaningIntervalDays === 0 ? "없음" : `${eq.cleaningIntervalDays ?? 14}일`}
                       </td>
+                      <td className="px-4 py-3 text-center">
+                        {eq.chatNotify
+                          ? <span className="inline-block rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-medium px-2 py-0.5">켜짐</span>
+                          : <span className="text-gray-300">—</span>}
+                      </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
                           {isAdmin && (
@@ -388,7 +412,7 @@ export default function EquipmentSettingsPage({ isAdmin = false }: EquipmentSett
                     </tr>
                     {editingId === eq.id && (
                       <tr key={`edit-${eq.id}`}>
-                        <td colSpan={7} className="px-4 py-3 bg-blue-50/50">
+                        <td colSpan={8} className="px-4 py-3 bg-blue-50/50">
                           <FormRow compact />
                         </td>
                       </tr>
@@ -431,6 +455,11 @@ export default function EquipmentSettingsPage({ isAdmin = false }: EquipmentSett
                     ) : (
                       <span className="flex items-center gap-1 rounded-full bg-gray-100 text-gray-500 px-2 py-0.5 font-medium">
                         <Sparkles size={10} /> 클리닝 제외
+                      </span>
+                    )}
+                    {eq.chatNotify && (
+                      <span className="flex items-center gap-1 rounded-full bg-indigo-100 text-indigo-700 px-2 py-0.5 font-medium">
+                        <MessageSquare size={10} /> 구글챗 알림
                       </span>
                     )}
                   </div>

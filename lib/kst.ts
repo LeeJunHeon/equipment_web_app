@@ -35,6 +35,26 @@ export function parseKst(input: string): Date {
   return new Date(`${withSec}Z`);
 }
 
+// ── 표시용 포맷 ──
+// occurred_at·completed_at 은 "KST 벽시계를 UTC로 읽은 Date", next_scheduled_at(@db.Date)은
+// "UTC 자정 Date" 다. 즉 UTC 필드에 이미 KST 벽시계 값이 들어 있으므로 반드시 getUTC* 로 읽는다.
+// toLocaleString·Intl.DateTimeFormat 에 timeZone "Asia/Seoul" 을 주면 9시간이 한 번 더 더해져
+// 어긋나고, 로컬 getter(getHours 등)는 컨테이너 TZ 에 따라 결과가 달라지므로 쓰지 않는다.
+
+function pad2(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
+/** KST 벽시계 규칙의 Date 를 "YYYY-MM-DD HH:mm" 으로 표시 (컨테이너 TZ 무관) */
+export function formatKstDateTime(d: Date): string {
+  return `${formatKstDate(d)} ${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`;
+}
+
+/** KST 벽시계 규칙(또는 @db.Date 의 UTC 자정)의 Date 를 "YYYY-MM-DD" 로 표시 (컨테이너 TZ 무관) */
+export function formatKstDate(d: Date): string {
+  return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}-${pad2(d.getUTCDate())}`;
+}
+
 /** 이번 달 1일 00:00 (KST 벽시계) Date */
 export function monthStartKst(): Date {
   const k = nowKst();

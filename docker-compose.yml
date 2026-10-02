@@ -18,6 +18,7 @@ services:
       AUTH_TRUST_HOST: "true"
       EQUIP_MCP_TOKEN: ${EQUIP_MCP_TOKEN}
       EQUIP_WRITE_TOKEN: ${EQUIP_WRITE_TOKEN}
+      EQUIP_CHAT_WEBHOOK_URL: ${EQUIP_CHAT_WEBHOOK_URL:-}
     networks:
       - vanam-db-net
 
