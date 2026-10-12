@@ -4,9 +4,10 @@ import { useState, useEffect } from "react";
 import { Home, Wrench, X, LogOut, Settings, ChevronDown, ChevronRight, FileText, Wind, Sparkles, ArrowLeft } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import type { Equipment } from "@/lib/types";
+import { STATIC_MENUS, type PageKey } from "@/lib/menus";
 
 interface SidebarProps {
-  currentPage: "dashboard" | "equipment" | "equipment-settings" | "history-repair" | "history-vent" | "history-cleaning";
+  currentPage: PageKey;
   selectedEquipmentId: number | null;
   onNavigateDashboard: () => void;
   onNavigateEquipment: (equipment: Equipment) => void;
@@ -122,7 +123,7 @@ export default function Sidebar({
             }`}
           >
             <Home size={18} />
-            <span className="flex-1 text-left">대시보드</span>
+            <span className="flex-1 text-left">{STATIC_MENUS.dashboard.label}</span>
             {totalUnresolved > 0 && currentPage !== "dashboard" && (
               <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
                 {totalUnresolved}
@@ -144,7 +145,7 @@ export default function Sidebar({
               }`}
             >
               <Wrench size={18} className="text-red-400" />
-              <span>수리 이력</span>
+              <span>{STATIC_MENUS["history-repair"].label}</span>
             </button>
             <button
               onClick={() => handleNav(() => onNavigateHistory("vent"))}
@@ -155,7 +156,7 @@ export default function Sidebar({
               }`}
             >
               <Wind size={18} className="text-blue-400" />
-              <span>Vent 이력</span>
+              <span>{STATIC_MENUS["history-vent"].label}</span>
             </button>
             <button
               onClick={() => handleNav(() => onNavigateHistory("cleaning"))}
@@ -166,7 +167,7 @@ export default function Sidebar({
               }`}
             >
               <Sparkles size={18} className="text-green-400" />
-              <span>클리닝 이력</span>
+              <span>{STATIC_MENUS["history-cleaning"].label}</span>
             </button>
           </div>
 
@@ -212,7 +213,7 @@ export default function Sidebar({
             })}
           </div>
 
-          {/* 장비 설정 */}
+          {/* 장비 설정 (관리자 전용 — lib/menus 의 adminOnly 와 같은 조건) */}
           {isAdmin && (
             <div className="mt-1">
               <div className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
@@ -227,7 +228,7 @@ export default function Sidebar({
                 }`}
               >
                 <Settings size={18} className={currentPage === "equipment-settings" ? "text-blue-500" : "text-gray-400"} />
-                <span>장비 설정</span>
+                <span>{STATIC_MENUS["equipment-settings"].label}</span>
               </button>
             </div>
           )}
